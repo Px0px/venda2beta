@@ -153,6 +153,16 @@
       border: 2px solid #222;
     }
   </style>
+
+    <style id="global-arial-black">
+      html, body, body *, body *::before, body *::after {
+        font-family: "Arial Black", Arial, sans-serif !important;
+      }
+      #supabase-status-banner {
+        display: none !important;
+      }
+    </style>
+
 </head>
 <body class="min-h-screen flex flex-col justify-between antialiased">
 
@@ -166,8 +176,8 @@
           ⛏️
         </div>
         <div>
-          <h1 class="font-pixel text-yellow-400 text-sm md:text-lg tracking-wider drop-shadow">CRAFT-SHOP</h1>
-          <p class="text-xs text-stone-400">Lojinha de Trocas Minecraft com Supabase</p>
+          <h1 class="font-pixel text-yellow-400 text-sm md:text-lg tracking-wider drop-shadow">MINE 2BETA</h1>
+          <p class="text-xs text-stone-400">Lojinha de Trocas Minecraft</p>
         </div>
       </div>
 
@@ -334,7 +344,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
     <!-- BANNER CONEXÃO SUPABASE -->
     <div id="supabase-status-banner" class="mc-box-grass p-4 mb-6 rounded text-white flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
-        <h2 class="font-pixel text-yellow-300 text-base mb-1" id="sb-status-title">⚡ Supabase: Desconectado</h2>
+        
         <p class="text-sm" id="sb-status-desc">Configure as credenciais do Supabase para ativar os dados em tempo real na nuvem.</p>
       </div>
       <button onclick="openConfigModal()" class="mc-button mc-button-gold font-pixel text-xs px-4 py-2">
