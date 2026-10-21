@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lojinha de Trocas Minecraft (GitHub API)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Minecraft Style -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        .font-minecraft-title { font-family: 'Press Start 2P', cursive; }
+        .font-minecraft { font-family: 'VT323', monospace; }
+        
+        .mc-button {
+            box-shadow: inset -4px -4px 0px 0px #2a2a2a, inset 4px 4px 0px 0px #ffffff;
+            border: 2px solid #000;
+        }
+        .mc-button:active {
+            box-shadow: inset 4px 4px 0px 0px #2a2a2a, inset -4px -4px 0px 0px #ffffff;
+        }
+        .mc-button-green {
+            background-color: #55aa55;
+            box-shadow: inset -4px -4px 0px 0px #226622, inset 4px 4px 0px 0px #aaffaa;
+        }
+        .mc-button-green:hover { background-color: #449944; }
+        .mc-button-red {
+            background-color: #ff5555;
+            box-shadow: inset -4px -4px 0px 0px #992222, inset 4px 4px 0px 0px #ffaaaa;
+        }
+        .mc-button-red:hover { background-color: #dd4444; }
+        
+        .mc-panel {
+            background-color: #c6c6c6;
+            border: 4px solid #000;
+            box-shadow: inset -4px -4px 0px 0px #555555, inset 4px 4px 0px 0px #ffffff;
+        }
+        
+        .mc-panel-dark {
+            background-color: #212121;
+            border: 4px solid #373737;
+            box-shadow: inset -4px -4px 0px 0px #111111, inset 4px 4px 0px 0px #555555;
+        }
+
+        .mc-input {
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #a0a0a0;
+            box-shadow: inset 2px 2px 0px 0px #555;
+        }
+        .mc-input:focus { border-color: #55ff55; outline: none; }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #555; border: 2px solid #000; }
+    </style>
+</head>
+<body class="bg-stone-900 text-white min-h-screen font-minecraft selection:bg-green-600 selection:text-white">
+
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="mc-panel w-full max-w-md p-6 text-black relative">
+            <h2 class="font-minecraft-title text-xl text-center mb-6 text-gray-900 tracking-wider">ENTRAR NA LOJA</h2>
+            
+            <div class="flex border-b-2 border-black mb-6">
+                <button id="tab-guest-btn" onclick="switchLoginTab('guest')" class="flex-1 py-2 font-minecraft-title text-xs bg-gray-400 border-t-2 border-l-2 border-r-2 border-black">
+                    Convidado
+                </button>
+                <button id="tab-admin-btn" onclick="switchLoginTab('admin')" class="flex-1 py-2 font-minecraft-title text-xs bg-gray-300 border-b-2 border-black">
+                    Admin
+                </button>
+            </div>
+
+            <!-- Form Convidado -->
+            <div id="form-guest" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold mb-1">Seu Nick no Minecraft:</label>
+                    <input type="text" id="guest-username" placeholder="Ex: Steve_Craft" class="w-full p-2 mc-input text-lg">
+                </div>
+                <button onclick="loginAsGuest()" class="w-full py-3 mc-button mc-button-green text-white font-minecraft-title text-sm tracking-wider">
+                    ENTRAR COMO CONVIDADO
+                </button>
+            </div>
+
+            <!-- Form Admin -->
+            <div id="form-admin" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-sm font-bold mb-1">Usuário Administrador:</label>
+                    <input type="text" id="admin-user" placeholder="Usuário" class="w-full p-2 mc-input text-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">Senha:</label>
+                    <input type="password" id="admin-pass" placeholder="••••••••" class="w-full p-2 mc-input text-lg">
+                </div>
+                <div id="admin-error" class="text-red-600 text-sm font-bold hidden">
+                    Usuário ou senha incorretos!
+                </div>
+                <button onclick="loginAsAdmin()" class="w-full py-3 mc-button mc-button-green text-white font-minecraft-title text-sm tracking-wider">
+                    ACESSAR COMO ADMIN
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONFIG GITHUB MODAL -->
+    <div id="github-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="mc-panel w-full max-w-lg p-6 text-black relative">
+            <button onclick="closeGithubModal()" class="absolute top-2 right-2 font-minecraft-title text-red-600 font-bold text-lg">X</button>
+            <h2 class="font-minecraft-title text-lg text-center mb-4 text-gray-900">CONFIGURAR GITHUB API</h2>
+            
+            <p class="text-xs mb-4">Insira os dados do seu repositório para que o site faça commits automáticos nos arquivos <code class="bg-gray-300 px-1">produtos.json</code> e <code class="bg-gray-300 px-1">pedidos.json</code>.</p>
+
+            <div class="space-y-3 mb-6">
+                <div>
+                    <label class="block text-xs font-bold mb-1">Usuário / Organização do GitHub:</label>
+                    <input type="text" id="cfg-gh-owner" placeholder="Ex: seu-usuario" class="w-full p-2 mc-input text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold mb-1">Nome do Repositório:</label>
+                    <input type="text" id="cfg-gh-repo" placeholder="Ex: lojinha-minecraft" class="w-full p-2 mc-input text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold mb-1">Branch (Normalmente 'main'):</label>
+                    <input type="text" id="cfg-gh-branch" value="main" placeholder="main" class="w-full p-2 mc-input text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold mb-1">Personal Access Token (PAT):</label>
+                    <input type="password" id="cfg-gh-token" placeholder="ghp_••••••••••••••••••••" class="w-full p-2 mc-input text-sm">
+                </div>
+            </div>
+
+            <button onclick="saveGithubConfig()" class="w-full py-2 mc-button mc-button-green text-white font-minecraft-title text-xs">
+                SALVAR CONFIGURAÇÃO
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container" class="opacity-30 pointer-events-none transition-all duration-300">
+        <!-- HEADER -->
+        <header class="bg-stone-800 border-b-4 border-black p-4 sticky top-0 z-40">
+            <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">⛏️</span>
+                    <div>
+                        <h1 class="font-minecraft-title text-xl text-yellow-400 tracking-wider">LOJA DE TROCAS</h1>
+                        <p class="text-xs text-gray-400">Troque seus itens do Minecraft com facilidade!</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button onclick="openGithubModal()" id="gh-status-badge" class="px-3 py-1 bg-red-900/80 border border-red-500 text-red-200 text-xs rounded flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                        <span>GitHub Token Desconectado</span>
+                    </button>
+
+                    <div id="user-info-bar" class="flex items-center gap-3 bg-stone-900 p-2 px-3 border-2 border-stone-600">
+                        <span id="user-badge" class="font-minecraft-title text-xs text-green-400">---</span>
+                        <button onclick="logout()" class="mc-button mc-button-red text-xs px-2 py-1 text-white font-bold">
+                            SAIR
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- NAVIGATION TABS -->
+        <div class="max-w-6xl mx-auto px-4 mt-6">
+            <div class="flex border-b-4 border-black gap-2">
+                <button id="nav-catalog" onclick="switchMainTab('catalog')" class="py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black">
+                    🛒 Catálogo
+                </button>
+                <button id="nav-orders" onclick="switchMainTab('orders')" class="py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black">
+                    📦 Pedidos <span id="orders-count" class="bg-yellow-500 text-black px-1 rounded text-xs ml-1">0</span>
+                </button>
+                <button id="nav-admin" onclick="switchMainTab('admin')" class="py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black hidden">
+                    ⚙️ Painel Admin
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="max-w-6xl mx-auto p-4">
+            
+            <!-- SECTION 1: CATALOGO -->
+            <section id="section-catalog" class="space-y-6">
+                <div class="mc-panel-dark p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div class="w-full md:w-1/2">
+                        <input type="text" id="search-input" oninput="renderCatalog()" placeholder="Buscar item..." class="w-full p-2 mc-input text-lg">
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <select id="filter-category" onchange="renderCatalog()" class="p-2 mc-input text-lg bg-black text-white w-full">
+                            <option value="all">Todas Categorias</option>
+                            <option value="Recursos">Recursos</option>
+                            <option value="Equipamentos">Equipamentos</option>
+                            <option value="Blocos">Blocos</option>
+                            <option value="Comida/Poções">Comida/Poções</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- SECTION 2: PEDIDOS -->
+            <section id="section-orders" class="space-y-6 hidden">
+                <div class="mc-panel-dark p-6">
+                    <h2 class="font-minecraft-title text-lg text-yellow-400 mb-4">ACOMPANHAMENTO DE PEDIDOS</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b-2 border-stone-700 text-yellow-400 font-minecraft-title text-xs">
+                                    <th class="p-3">#ID</th>
+                                    <th class="p-3">Cliente</th>
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Qtd</th>
+                                    <th class="p-3">Pagamento (Troca)</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right" id="th-actions">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body" class="divide-y divide-stone-800 text-lg"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: PAINEL ADMIN -->
+            <section id="section-admin" class="space-y-6 hidden">
+                <div class="mc-panel p-6 text-black">
+                    <h2 class="font-minecraft-title text-lg mb-4 text-stone-900">ADICIONAR / EDITAR PRODUTO</h2>
+                    <form id="product-form" onsubmit="handleSaveProduct(event)" class="space-y-4">
+                        <input type="hidden" id="prod-id">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Nome do Item a Vender:</label>
+                                <input type="text" id="prod-nome" required placeholder="Ex: Espada de Diamante" class="w-full p-2 mc-input text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Categoria:</label>
+                                <select id="prod-categoria" class="w-full p-2 mc-input text-lg bg-black text-white">
+                                    <option value="Recursos">Recursos</option>
+                                    <option value="Equipamentos">Equipamentos</option>
+                                    <option value="Blocos">Blocos</option>
+                                    <option value="Comida/Poções">Comida/Poções</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Ícone / Emoji / URL Imagem:</label>
+                                <input type="text" id="prod-imagem" required placeholder="Ex: 💎 ou URL" class="w-full p-2 mc-input text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Preço (Item cobrado):</label>
+                                <input type="text" id="prod-preco-item" required placeholder="Ex: Barras de Ferro" class="w-full p-2 mc-input text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Preço (Qtd cobrada):</label>
+                                <input type="number" id="prod-preco-qtd" required min="1" placeholder="Ex: 10" class="w-full p-2 mc-input text-lg">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Estoque Inicial:</label>
+                            <input type="number" id="prod-estoque" required min="0" placeholder="Ex: 64" class="w-full p-2 mc-input text-lg">
+                        </div>
+
+                        <div class="flex gap-4 pt-2">
+                            <button type="submit" id="save-prod-btn" class="flex-1 py-3 mc-button mc-button-green text-white font-minecraft-title text-xs">
+                                SALVAR E COMITAR NO GITHUB
+                            </button>
+                            <button type="button" onclick="resetProductForm()" class="py-3 px-6 mc-button bg-gray-500 text-white font-minecraft-title text-xs">
+                                LIMPAR
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL FAZER PEDIDO -->
+    <div id="order-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="mc-panel w-full max-w-md p-6 text-black relative">
+            <button onclick="closeOrderModal()" class="absolute top-2 right-2 font-minecraft-title text-red-600 font-bold text-lg">X</button>
+            <h2 class="font-minecraft-title text-lg text-center mb-4 text-stone-900">FAZER PEDIDO</h2>
+            
+            <div id="order-modal-details" class="bg-gray-300 p-3 mb-4 border-2 border-black text-sm"></div>
+
+            <form onsubmit="submitOrder(event)" class="space-y-4">
+                <input type="hidden" id="order-prod-id">
+                <div>
+                    <label class="block text-sm font-bold mb-1">Quantidade Desejada:</label>
+                    <input type="number" id="order-qtd" value="1" min="1" oninput="calculateOrderTotal()" class="w-full p-2 mc-input text-lg">
+                </div>
+
+                <div class="bg-yellow-100 p-3 border-2 border-yellow-600 text-stone-900">
+                    <span class="text-xs font-bold block">TOTAL A PAGAR NA TROCA:</span>
+                    <span id="order-total-display" class="font-minecraft-title text-sm text-green-700">---</span>
+                </div>
+
+                <button type="submit" id="submit-order-btn" class="w-full py-3 mc-button mc-button-green text-white font-minecraft-title text-xs">
+                    CONFIRMAR PEDIDO
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAÇÕES DO GITHUB API
+        let ghOwner = localStorage.getItem('mc_gh_owner') || '';
+        let ghRepo = localStorage.getItem('mc_gh_repo') || '';
+        let ghBranch = localStorage.getItem('mc_gh_branch') || 'main';
+        let ghToken = localStorage.getItem('mc_gh_token') || '';
+
+        // CACHE DE SHAs DO GITHUB (NECESSÁRIO PARA ATUALIZAR ARQUIVOS VIA API)
+        let shaProducts = null;
+        let shaOrders = null;
+
+        // STATE DA APLICAÇÃO
+        let currentUser = JSON.parse(localStorage.getItem('mc_user')) || null;
+        let products = [];
+        let orders = [];
+
+        window.onload = function() {
+            updateGhStatusBadge();
+            if (currentUser) {
+                initApp();
+            } else {
+                document.getElementById('login-modal').classList.remove('hidden');
+            }
+        };
+
+        function updateGhStatusBadge() {
+            const badge = document.getElementById('gh-status-badge');
+            if (ghToken && ghOwner && ghRepo) {
+                badge.className = "px-3 py-1 bg-green-900/80 border border-green-500 text-green-200 text-xs rounded flex items-center gap-2 cursor-pointer";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-400"></span><span>GitHub API Conectado</span>`;
+            } else {
+                badge.className = "px-3 py-1 bg-red-900/80 border border-red-500 text-red-200 text-xs rounded flex items-center gap-2 cursor-pointer";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span><span>GitHub Token Desconectado</span>`;
+            }
+        }
+
+        // LOGIN/LOGOUT
+        function switchLoginTab(tab) {
+            const guestBtn = document.getElementById('tab-guest-btn');
+            const adminBtn = document.getElementById('tab-admin-btn');
+            const formGuest = document.getElementById('form-guest');
+            const formAdmin = document.getElementById('form-admin');
+
+            if (tab === 'guest') {
+                guestBtn.className = "flex-1 py-2 font-minecraft-title text-xs bg-gray-400 border-t-2 border-l-2 border-r-2 border-black";
+                adminBtn.className = "flex-1 py-2 font-minecraft-title text-xs bg-gray-300 border-b-2 border-black";
+                formGuest.classList.remove('hidden');
+                formAdmin.classList.add('hidden');
+            } else {
+                adminBtn.className = "flex-1 py-2 font-minecraft-title text-xs bg-gray-400 border-t-2 border-l-2 border-r-2 border-black";
+                guestBtn.className = "flex-1 py-2 font-minecraft-title text-xs bg-gray-300 border-b-2 border-black";
+                formAdmin.classList.remove('hidden');
+                formGuest.classList.add('hidden');
+            }
+        }
+
+        function loginAsGuest() {
+            const nick = document.getElementById('guest-username').value.trim();
+            if (!nick) return alert("Digite seu nick no Minecraft!");
+            currentUser = { role: 'guest', name: nick };
+            localStorage.setItem('mc_user', JSON.stringify(currentUser));
+            initApp();
+        }
+
+        function loginAsAdmin() {
+            const user = document.getElementById('admin-user').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
+
+            if (user === 'Pedro44247474' && pass === 'Pedro44247474@') {
+                currentUser = { role: 'admin', name: 'Pedro (Admin)' };
+                localStorage.setItem('mc_user', JSON.stringify(currentUser));
+                document.getElementById('admin-error').classList.add('hidden');
+                initApp();
+            } else {
+                document.getElementById('admin-error').classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('mc_user');
+            currentUser = null;
+            location.reload();
+        }
+
+        function initApp() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('opacity-30', 'pointer-events-none');
+            document.getElementById('user-badge').innerText = `${currentUser.name} (${currentUser.role.toUpperCase()})`;
+
+            if (currentUser.role === 'admin') {
+                document.getElementById('nav-admin').classList.remove('hidden');
+            }
+
+            loadData();
+        }
+
+        // CARREGAR PRODUTOS E PEDIDOS DO GITHUB
+        async function loadData() {
+            try {
+                // Carrega produtos.json
+                const resProd = await fetch(`produtos.json?t=${Date.now()}`);
+                if (resProd.ok) products = await resProd.json();
+
+                // Carrega pedidos.json
+                const resOrd = await fetch(`pedidos.json?t=${Date.now()}`);
+                if (resOrd.ok) orders = await resOrd.json();
+
+                // Se houver token configurado, busca os SHAs atualizados para permitir escrita
+                if (ghOwner && ghRepo && ghToken) {
+                    fetchFileSha('produtos.json').then(sha => shaProducts = sha);
+                    fetchFileSha('pedidos.json').then(sha => shaOrders = sha);
+                }
+            } catch (err) {
+                console.error("Erro ao carregar arquivos:", err);
+            }
+
+            document.getElementById('orders-count').innerText = orders.length;
+            renderCatalog();
+            renderOrders();
+        }
+
+        // COMITAR NO GITHUB VIA API
+        async function fetchFileSha(filename) {
+            try {
+                const res = await fetch(`https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${filename}?ref=${ghBranch}`, {
+                    headers: { 'Authorization': `token ${ghToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    return data.sha;
+                }
+            } catch (e) { console.error("Erro ao obter SHA:", e); }
+            return null;
+        }
+
+        async function commitToGithub(filename, contentObj, currentSha, commitMessage) {
+            if (!ghToken || !ghOwner || !ghRepo) {
+                alert("Para salvar alterações no repositório, configure seu Token do GitHub no topo do site!");
+                return false;
+            }
+
+            const jsonStr = JSON.stringify(contentObj, null, 2);
+            // Utf8 safe base64 encoding
+            const base64Content = btoa(unescape(encodeURIComponent(jsonStr)));
+
+            const payload = {
+                message: commitMessage,
+                content: base64Content,
+                branch: ghBranch
+            };
+            if (currentSha) payload.sha = currentSha;
+
+            const res = await fetch(`https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${filename}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${ghToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                const resData = await res.json();
+                if (filename === 'produtos.json') shaProducts = resData.content.sha;
+                if (filename === 'pedidos.json') shaOrders = resData.content.sha;
+                return true;
+            } else {
+                const err = await res.json();
+                alert(`Erro ao comitar no GitHub: ${err.message}`);
+                return false;
+            }
+        }
+
+        // RENDER CATÁLOGO
+        function renderCatalog() {
+            const grid = document.getElementById('catalog-grid');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const category = document.getElementById('filter-category').value;
+
+            grid.innerHTML = '';
+
+            const filtered = products.filter(p => {
+                const matchSearch = p.nome.toLowerCase().includes(search);
+                const matchCat = category === 'all' || p.categoria === category;
+                return matchSearch && matchCat;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10 font-minecraft-title text-sm">Nenhum item encontrado!</div>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const isEmoji = p.imagem.length <= 4;
+                const imgHtml = isEmoji 
+                    ? `<span class="text-5xl select-none">${p.imagem}</span>` 
+                    : `<img src="${p.imagem}" class="w-16 h-16 object-contain" alt="${p.nome}">`;
+
+                const isAdmin = currentUser && currentUser.role === 'admin';
+
+                grid.innerHTML += `
+                    <div class="mc-panel-dark p-4 flex flex-col justify-between relative group">
+                        ${isAdmin ? `
+                            <div class="absolute top-2 right-2 flex gap-1">
+                                <button onclick="editProduct(\${p.id})" class="bg-blue-600 text-white text-xs px-2 py-1 font-bold rounded">✏️</button>
+                                <button onclick="deleteProduct(\${p.id})" class="bg-red-600 text-white text-xs px-2 py-1 font-bold rounded">🗑️</button>
+                            </div>
+                        ` : ''}
+                        
+                        <div>
+                            <div class="bg-stone-900 border-2 border-stone-700 h-28 flex items-center justify-center mb-3">
+                                ${imgHtml}
+                            </div>
+                            <span class="text-xs bg-stone-800 text-yellow-500 px-2 py-0.5 rounded border border-stone-700">${p.categoria}</span>
+                            <h3 class="font-minecraft-title text-sm text-white mt-2">${p.nome}</h3>
+                            
+                            <div class="mt-3 p-2 bg-black/40 border border-stone-800 text-xs space-y-1">
+                                <p class="text-gray-300">Custa: <span class="text-green-400 font-bold">${p.preco_quantidade}x ${p.preco_item}</span></p>
+                                <p class="text-gray-400">Estoque: <span class="${p.estoque > 0 ? 'text-white' : 'text-red-500 font-bold'}">${p.estoque} unidades</span></p>
+                            </div>
+                        </div>
+
+                        <button onclick="openOrderModal(${p.id})" ${p.estoque <= 0 ? 'disabled' : ''} 
+                            class="mt-4 w-full py-2 mc-button ${p.estoque > 0 ? 'mc-button-green text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'} font-minecraft-title text-xs">
+                            ${p.estoque > 0 ? 'TROCAR ITEM' : 'SEM ESTOQUE'}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // SALVAR PRODUTO
+        async function handleSaveProduct(e) {
+            e.preventDefault();
+            const saveBtn = document.getElementById('save-prod-btn');
+            saveBtn.disabled = true;
+            saveBtn.innerText = "COMITANDO NO GITHUB...";
+
+            const id = document.getElementById('prod-id').value;
+            const nome = document.getElementById('prod-nome').value.trim();
+            const categoria = document.getElementById('prod-categoria').value;
+            const imagem = document.getElementById('prod-imagem').value.trim();
+            const preco_item = document.getElementById('prod-preco-item').value.trim();
+            const preco_quantidade = parseInt(document.getElementById('prod-preco-qtd').value);
+            const estoque = parseInt(document.getElementById('prod-estoque').value);
+
+            const payload = { id: id ? parseInt(id) : Date.now(), nome, categoria, imagem, preco_item, preco_quantidade, estoque };
+
+            let updatedProducts = [...products];
+            if (id) {
+                const idx = updatedProducts.findIndex(p => p.id == id);
+                if (idx !== -1) updatedProducts[idx] = payload;
+            } else {
+                updatedProducts.push(payload);
+            }
+
+            const ok = await commitToGithub('produtos.json', updatedProducts, shaProducts, `Atualiza produto: ${nome}`);
+            if (ok) {
+                products = updatedProducts;
+                resetProductForm();
+                switchMainTab('catalog');
+                renderCatalog();
+                alert("Produto salvo e comitado no repositório com sucesso!");
+            }
+
+            saveBtn.disabled = false;
+            saveBtn.innerText = "SALVAR E COMITAR NO GITHUB";
+        }
+
+        function editProduct(id) {
+            const p = products.find(x => x.id == id);
+            if (!p) return;
+            document.getElementById('prod-id').value = p.id;
+            document.getElementById('prod-nome').value = p.nome;
+            document.getElementById('prod-categoria').value = p.categoria;
+            document.getElementById('prod-imagem').value = p.imagem;
+            document.getElementById('prod-preco-item').value = p.preco_item;
+            document.getElementById('prod-preco-qtd').value = p.preco_quantidade;
+            document.getElementById('prod-estoque').value = p.estoque;
+            switchMainTab('admin');
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+            const updatedProducts = products.filter(p => p.id != id);
+            const ok = await commitToGithub('produtos.json', updatedProducts, shaProducts, `Remove produto ID #${id}`);
+            if (ok) {
+                products = updatedProducts;
+                renderCatalog();
+            }
+        }
+
+        function resetProductForm() {
+            document.getElementById('prod-id').value = '';
+            document.getElementById('product-form').reset();
+        }
+
+        // FAZER PEDIDO
+        let selectedProductForOrder = null;
+
+        function openOrderModal(prodId) {
+            selectedProductForOrder = products.find(p => p.id == prodId);
+            if (!selectedProductForOrder) return;
+
+            document.getElementById('order-prod-id').value = selectedProductForOrder.id;
+            document.getElementById('order-qtd').value = 1;
+            document.getElementById('order-qtd').max = selectedProductForOrder.estoque;
+
+            document.getElementById('order-modal-details').innerHTML = `
+                <p><strong>Item:</strong> ${selectedProductForOrder.nome}</p>
+                <p><strong>Preço unitário:</strong> ${selectedProductForOrder.preco_quantidade}x ${selectedProductForOrder.preco_item}</p>
+                <p><strong>Estoque disponível:</strong> ${selectedProductForOrder.estoque}</p>
+            `;
+
+            calculateOrderTotal();
+            document.getElementById('order-modal').classList.remove('hidden');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').classList.add('hidden');
+        }
+
+        function calculateOrderTotal() {
+            if (!selectedProductForOrder) return;
+            const qtd = parseInt(document.getElementById('order-qtd').value) || 1;
+            const total = qtd * selectedProductForOrder.preco_quantidade;
+            document.getElementById('order-total-display').innerText = `${total}x ${selectedProductForOrder.preco_item}`;
+        }
+
+        async function submitOrder(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-order-btn');
+            btn.disabled = true;
+            btn.innerText = "ENVIANDO PEDIDO...";
+
+            const qtd = parseInt(document.getElementById('order-qtd').value);
+            if (qtd > selectedProductForOrder.estoque) {
+                alert("Quantidade maior que o estoque!");
+                btn.disabled = false;
+                return;
+            }
+
+            const totalPagamento = `${qtd * selectedProductForOrder.preco_quantidade}x ${selectedProductForOrder.preco_item}`;
+            const newOrder = {
+                id: Date.now(),
+                cliente: currentUser.name,
+                produto_id: selectedProductForOrder.id,
+                produto_nome: selectedProductForOrder.nome,
+                quantidade: qtd,
+                total_pagamento: totalPagamento,
+                status: 'Pendente'
+            };
+
+            const updatedOrders = [newOrder, ...orders];
+            
+            // Atualiza o estoque do produto
+            const updatedProducts = products.map(p => {
+                if (p.id == selectedProductForOrder.id) {
+                    return { ...p, estoque: p.estoque - qtd };
+                }
+                return p;
+            });
+
+            const okOrd = await commitToGithub('pedidos.json', updatedOrders, shaOrders, `Novo pedido de ${currentUser.name}`);
+            if (okOrd) {
+                orders = updatedOrders;
+                await commitToGithub('produtos.json', updatedProducts, shaProducts, `Atualiza estoque produto ID #${selectedProductForOrder.id}`);
+                products = updatedProducts;
+
+                closeOrderModal();
+                switchMainTab('orders');
+                renderCatalog();
+                renderOrders();
+                alert("Pedido realizado com sucesso!");
+            }
+
+            btn.disabled = false;
+            btn.innerText = "CONFIRMAR PEDIDO";
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('orders-table-body');
+            const thActions = document.getElementById('th-actions');
+            tbody.innerHTML = '';
+
+            const isAdmin = currentUser && currentUser.role === 'admin';
+            if (!isAdmin) {
+                thActions.classList.add('hidden');
+            } else {
+                thActions.classList.remove('hidden');
+            }
+
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">Nenhum pedido realizado ainda.</td></tr>`;
+                return;
+            }
+
+            orders.forEach(o => {
+                let statusColor = 'text-yellow-400';
+                if (o.status === 'Concluído') statusColor = 'text-green-400';
+                if (o.status === 'Cancelado') statusColor = 'text-red-400';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 text-gray-400">#${o.id}</td>
+                        <td class="p-3 font-bold text-white">${o.cliente}</td>
+                        <td class="p-3 text-yellow-300">${o.produto_nome}</td>
+                        <td class="p-3">${o.quantidade}</td>
+                        <td class="p-3 text-green-300">${o.total_pagamento}</td>
+                        <td class="p-3 font-bold ${statusColor}">${o.status}</td>
+                        ${isAdmin ? `
+                            <td class="p-3 text-right space-x-1">
+                                <button onclick="updateOrderStatus(\${o.id}, 'Concluído')" class="bg-green-600 text-white text-xs px-2 py-1 rounded">✔</button>
+                                <button onclick="updateOrderStatus(\${o.id}, 'Cancelado')" class="bg-red-600 text-white text-xs px-2 py-1 rounded">✖</button>
+                            </td>
+                        ` : ''}
+                    </tr>
+                `;
+            });
+        }
+
+        async function updateOrderStatus(orderId, status) {
+            const updatedOrders = orders.map(o => o.id == orderId ? { ...o, status } : o);
+            const ok = await commitToGithub('pedidos.json', updatedOrders, shaOrders, `Atualiza pedido #${orderId} para ${status}`);
+            if (ok) {
+                orders = updatedOrders;
+                renderOrders();
+            }
+        }
+
+        // SWITCH TABS
+        function switchMainTab(tab) {
+            const secCat = document.getElementById('section-catalog');
+            const secOrd = document.getElementById('section-orders');
+            const secAdm = document.getElementById('section-admin');
+
+            const btnCat = document.getElementById('nav-catalog');
+            const btnOrd = document.getElementById('nav-orders');
+            const btnAdm = document.getElementById('nav-admin');
+
+            secCat.classList.add('hidden');
+            secOrd.classList.add('hidden');
+            secAdm.classList.add('hidden');
+
+            btnCat.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black";
+            btnOrd.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black";
+            btnAdm.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black hidden";
+            if (currentUser.role === 'admin') btnAdm.classList.remove('hidden');
+
+            if (tab === 'catalog') {
+                secCat.classList.remove('hidden');
+                btnCat.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
+            } else if (tab === 'orders') {
+                secOrd.classList.remove('hidden');
+                btnOrd.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
+            } else if (tab === 'admin') {
+                secAdm.classList.remove('hidden');
+                btnAdm.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
+            }
+        }
+
+        // GITHUB MODAL
+        function openGithubModal() {
+            document.getElementById('cfg-gh-owner').value = ghOwner;
+            document.getElementById('cfg-gh-repo').value = ghRepo;
+            document.getElementById('cfg-gh-branch').value = ghBranch;
+            document.getElementById('cfg-gh-token').value = ghToken;
+            document.getElementById('github-modal').classList.remove('hidden');
+        }
+
+        function closeGithubModal() {
+            document.getElementById('github-modal').classList.add('hidden');
+        }
+
+        function saveGithubConfig() {
+            ghOwner = document.getElementById('cfg-gh-owner').value.trim();
+            ghRepo = document.getElementById('cfg-gh-repo').value.trim();
+            ghBranch = document.getElementById('cfg-gh-branch').value.trim() || 'main';
+            ghToken = document.getElementById('cfg-gh-token').value.trim();
+
+            localStorage.setItem('mc_gh_owner', ghOwner);
+            localStorage.setItem('mc_gh_repo', ghRepo);
+            localStorage.setItem('mc_gh_branch', ghBranch);
+            localStorage.setItem('mc_gh_token', ghToken);
+
+            closeGithubModal();
+            updateGhStatusBadge();
+            loadData();
+        }
+    </script>
+</body>
+</html>
