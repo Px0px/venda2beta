@@ -1016,7 +1016,8 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
 
       tbody.innerHTML = '';
 
-      const filtered = nick ? orders.filter(o => o.customer_name && o.customer_name.toLowerCase() === nick.toLowerCase()) : orders;
+      // Todos os visitantes podem visualizar todos os pedidos, independentemente do nick.
+      const filtered = orders;
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-stone-400">Nenhum pedido encontrado.</td></tr>`;
