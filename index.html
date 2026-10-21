@@ -272,7 +272,7 @@
 
     <script>
         const SUPABASE_URL = "https://jjthqwziyblaknxzlxyq.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_-1d4BJMLldRrPXLEXZdCng_iI8bPLit"; // Lembre-se de colar a chave publishable completa aqui
+        const SUPABASE_KEY = "sb_publishable_-1d4BJMLldRrPXLEXZdCng_iI8bPLit"; // Coloque sua chave publishable completa aqui
 
         let supabaseClient = null;
         try {
@@ -356,7 +356,6 @@
             if (!supabaseClient) return;
 
             try {
-                // Busca produtos da tabela 'produtos'
                 const { data: prodData, error: prodErr } = await supabaseClient
                     .from('produtos')
                     .select('*')
@@ -364,7 +363,6 @@
                 
                 if (!prodErr && prodData) products = prodData;
 
-                // Busca pedidos da tabela 'pedidos'
                 const { data: ordData, error: ordErr } = await supabaseClient
                     .from('pedidos')
                     .select('*')
@@ -372,7 +370,6 @@
                 
                 if (!ordErr && ordData) orders = ordData;
 
-                // Realtime
                 supabaseClient.channel('realtime_shop')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, () => loadData())
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => loadData())
@@ -448,191 +445,4 @@
             });
         }
 
-        async function handleSaveProduct(e) {
-            e.preventDefault();
-            const btn = document.getElementById('save-prod-btn');
-            btn.disabled = true;
-            btn.innerText = "SALVANDO...";
-
-            const id = document.getElementById('prod-id').value;
-            const name = document.getElementById('prod-nome').value.trim();
-            const category = document.getElementById('prod-categoria').value;
-            const icon = document.getElementById('prod-imagem').value.trim();
-            const price_description = document.getElementById('prod-preco-desc').value.trim();
-            const stock = parseInt(document.getElementById('prod-estoque').value);
-
-            const payload = { name, category, icon, price_description, stock };
-
-            if (id) {
-                await supabaseClient.from('produtos').update(payload).eq('id', id);
-            } else {
-                await supabaseClient.from('produtos').insert([payload]);
-            }
-
-            resetProductForm();
-            switchMainTab('catalog');
-            await loadData();
-
-            btn.disabled = false;
-            btn.innerText = "SALVAR PRODUTO NO SUPABASE";
-            alert("Produto salvo com sucesso!");
-        }
-
-        function editProduct(id) {
-            const p = products.find(x => String(x.id) === String(id));
-            if (!p) return;
-            document.getElementById('prod-id').value = p.id;
-            document.getElementById('prod-nome').value = p.name;
-            document.getElementById('prod-categoria').value = p.category;
-            document.getElementById('prod-imagem').value = p.icon;
-            document.getElementById('prod-preco-desc').value = p.price_description;
-            document.getElementById('prod-estoque').value = p.stock;
-            switchMainTab('admin');
-        }
-
-        async function deleteProduct(id) {
-            if (!confirm("Tem certeza que deseja excluir este produto?")) return;
-            await supabaseClient.from('produtos').delete().eq('id', id);
-            await loadData();
-        }
-
-        function resetProductForm() {
-            document.getElementById('prod-id').value = '';
-            document.getElementById('product-form').reset();
-        }
-
-        let selectedProductForOrder = null;
-
-        function openOrderModal(prodId) {
-            selectedProductForOrder = products.find(p => String(p.id) === String(prodId));
-            if (!selectedProductForOrder) return;
-
-            document.getElementById('order-prod-id').value = selectedProductForOrder.id;
-            document.getElementById('order-qtd').value = 1;
-            document.getElementById('order-qtd').max = selectedProductForOrder.stock;
-
-            document.getElementById('order-modal-details').innerHTML = `
-                <p><strong>Item:</strong> ${selectedProductForOrder.name}</p>
-                <p><strong>Preço:</strong> ${selectedProductForOrder.price_description}</p>
-                <p><strong>Estoque:</strong> ${selectedProductForOrder.stock}</p>
-            `;
-
-            document.getElementById('order-modal').classList.remove('hidden');
-        }
-
-        function closeOrderModal() {
-            document.getElementById('order-modal').classList.add('hidden');
-        }
-
-        async function submitOrder(e) {
-            e.preventDefault();
-            const btn = document.getElementById('submit-order-btn');
-            btn.disabled = true;
-            btn.innerText = "ENVIANDO PEDIDO...";
-
-            const qtd = parseInt(document.getElementById('order-qtd').value);
-            if (qtd > selectedProductForOrder.stock) {
-                alert("Quantidade maior do que o estoque disponível!");
-                btn.disabled = false;
-                return;
-            }
-
-            await supabaseClient.from('pedidos').insert([{
-                cliente: currentUser.name,
-                produto_id: selectedProductForOrder.id,
-                produto_nome: selectedProductForOrder.name,
-                quantidade: qtd,
-                total_pagamento: selectedProductForOrder.price_description,
-                status: 'Pendente'
-            }]);
-
-            const novoEstoque = selectedProductForOrder.stock - qtd;
-            await supabaseClient.from('produtos').update({ stock: novoEstoque }).eq('id', selectedProductForOrder.id);
-
-            closeOrderModal();
-            switchMainTab('orders');
-            await loadData();
-
-            btn.disabled = false;
-            btn.innerText = "CONFIRMAR PEDIDO DE TROCA";
-            alert("Pedido enviado com sucesso!");
-        }
-
-        function renderOrders() {
-            const tbody = document.getElementById('orders-table-body');
-            const thActions = document.getElementById('th-actions');
-            tbody.innerHTML = '';
-
-            const isAdmin = currentUser && currentUser.role === 'admin';
-            if (!isAdmin) {
-                thActions.classList.add('hidden');
-            } else {
-                thActions.classList.remove('hidden');
-            }
-
-            if (orders.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">Nenhum pedido realizado ainda.</td></tr>`;
-                return;
-            }
-
-            orders.forEach(o => {
-                let statusColor = 'text-yellow-400';
-                if (o.status === 'Concluído') statusColor = 'text-green-400';
-                if (o.status === 'Cancelado') statusColor = 'text-red-400';
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="p-3 text-gray-400">#${String(o.id).substring(0, 8)}</td>
-                        <td class="p-3 font-bold text-white">${o.cliente}</td>
-                        <td class="p-3 text-yellow-300">${o.produto_nome}</td>
-                        <td class="p-3">${o.quantidade}</td>
-                        <td class="p-3 text-green-300">${o.total_pagamento}</td>
-                        <td class="p-3 font-bold ${statusColor}">${o.status}</td>
-                        ${isAdmin ? `
-                            <td class="p-3 text-right space-x-1">
-                                <button onclick="updateOrderStatus('\${o.id}', 'Concluído')" class="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 rounded font-bold">✔</button>
-                                <button onclick="updateOrderStatus('\${o.id}', 'Cancelado')" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded font-bold">✖</button>
-                            </td>
-                        ` : ''}
-                    </tr>
-                `;
-            });
-        }
-
-        async function updateOrderStatus(orderId, status) {
-            await supabaseClient.from('pedidos').update({ status }).eq('id', orderId);
-            await loadData();
-        }
-
-        function switchMainTab(tab) {
-            const secCat = document.getElementById('section-catalog');
-            const secOrd = document.getElementById('section-orders');
-            const secAdm = document.getElementById('section-admin');
-
-            const btnCat = document.getElementById('nav-catalog');
-            const btnOrd = document.getElementById('nav-orders');
-            const btnAdm = document.getElementById('nav-admin');
-
-            secCat.classList.add('hidden');
-            secOrd.classList.add('hidden');
-            secAdm.classList.add('hidden');
-
-            btnCat.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black";
-            btnOrd.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black";
-            btnAdm.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black hidden";
-            if (currentUser.role === 'admin') btnAdm.classList.remove('hidden');
-
-            if (tab === 'catalog') {
-                secCat.classList.remove('hidden');
-                btnCat.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
-            } else if (tab === 'orders') {
-                secOrd.classList.remove('hidden');
-                btnOrd.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
-            } else if (tab === 'admin') {
-                secAdm.classList.remove('hidden');
-                btnAdm.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
-            }
-        }
-    </script>
-</body>
-</html>
+        async function
