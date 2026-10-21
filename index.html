@@ -1,1202 +1,674 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lojinha de Trocas Minecraft (Supabase Realtime)</title>
-
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Supabase JS Client v2 CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Google Fonts para estilo Retro Minecraft -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --mc-dirt: #5c3826;
-      --mc-grass: #4a7a29;
-      --mc-stone: #626262;
-      --mc-dark: #1b1b1b;
-      --mc-gold: #fbc02d;
-    }
-
-    body {
-      font-family: 'VT323', monospace;
-      background-color: #121212;
-      background-image: 
-        radial-gradient(#262626 15%, transparent 16%),
-        radial-gradient(#262626 15%, transparent 16%);
-      background-size: 30px 30px;
-      background-position: 0 0, 15px 15px;
-      color: #e0e0e0;
-      font-size: 1.25rem;
-    }
-
-    .font-pixel {
-      font-family: 'Press Start 2P', cursive;
-    }
-
-    /* Estilo Minecraft GUI Pixelado */
-    .mc-box {
-      background-color: #2b2b2b;
-      border: 4px solid #4a4a4a;
-      border-top-color: #6e6e6e;
-      border-left-color: #6e6e6e;
-      border-right-color: #1e1e1e;
-      border-bottom-color: #1e1e1e;
-      box-shadow: inset -2px -2px 0px #141414, inset 2px 2px 0px #808080;
-    }
-
-    .mc-box-grass {
-      background-color: #3b5228;
-      border: 4px solid #4a7a29;
-      border-top-color: #66a338;
-      border-left-color: #66a338;
-      border-right-color: #253d15;
-      border-bottom-color: #253d15;
-    }
-
-    .mc-button {
-      background-color: #727272;
-      border: 3px solid #3c3c3c;
-      border-top-color: #a8a8a8;
-      border-left-color: #a8a8a8;
-      border-right-color: #242424;
-      border-bottom-color: #242424;
-      color: #ffffff;
-      text-shadow: 2px 2px #000;
-      transition: all 0.1s ease;
-      cursor: pointer;
-    }
-
-    .mc-button:hover {
-      background-color: #8b8b8b;
-    }
-
-    .mc-button:active {
-      border-top-color: #242424;
-      border-left-color: #242424;
-      border-right-color: #a8a8a8;
-      border-bottom-color: #a8a8a8;
-      transform: translateY(2px);
-    }
-
-    .mc-button-green {
-      background-color: #2e7d32;
-      border-top-color: #4caf50;
-      border-left-color: #4caf50;
-      border-right-color: #1b5e20;
-      border-bottom-color: #1b5e20;
-    }
-
-    .mc-button-green:hover {
-      background-color: #388e3c;
-    }
-
-    .mc-button-red {
-      background-color: #c62828;
-      border-top-color: #ef5350;
-      border-left-color: #ef5350;
-      border-right-color: #8e0000;
-      border-bottom-color: #8e0000;
-    }
-
-    .mc-button-red:hover {
-      background-color: #d32f2f;
-    }
-
-    .mc-button-gold {
-      background-color: #f57f17;
-      border-top-color: #ffee58;
-      border-left-color: #ffee58;
-      border-right-color: #c77700;
-      border-bottom-color: #c77700;
-      color: #000;
-      text-shadow: none;
-    }
-
-    .mc-input {
-      background-color: #121212;
-      border: 3px solid #4a4a4a;
-      border-top-color: #1e1e1e;
-      border-left-color: #1e1e1e;
-      border-right-color: #6e6e6e;
-      border-bottom-color: #6e6e6e;
-      color: #55ff55;
-      padding: 6px 12px;
-      outline: none;
-    }
-
-    .mc-input:focus {
-      border-color: #55ffff;
-    }
-
-    .modal-backdrop {
-      background-color: rgba(0, 0, 0, 0.82);
-      backdrop-filter: blur(3px);
-    }
-
-    /* Custom Scrollbar estilo Minecraft */
-    ::-webkit-scrollbar {
-      width: 10px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #1a1a1a;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #555;
-      border: 2px solid #222;
-    }
-  </style>
-</head>
-<body class="min-h-screen flex flex-col justify-between antialiased">
-
-  <!-- CABEÇALHO DA LOJA -->
-  <header class="bg-stone-900 border-b-4 border-stone-700 sticky top-0 z-40 shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-      
-      <!-- LOGO -->
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 bg-emerald-700 border-2 border-green-400 flex items-center justify-center text-2xl shadow">
-          ⛏️
-        </div>
-        <div>
-          <h1 class="font-pixel text-yellow-400 text-sm md:text-lg tracking-wider drop-shadow">CRAFT-SHOP</h1>
-          <p class="text-xs text-stone-400">Lojinha de Trocas Minecraft com Supabase</p>
-        </div>
-      </div>
-
-      <!-- STATUS E PERFIL -->
-      <div class="flex items-center gap-3 bg-stone-800 p-2 border-2 border-stone-600 rounded">
-        <div class="text-sm">
-          <span class="text-stone-400">Jogador:</span>
-          <span id="user-display-name" class="font-pixel text-xs text-yellow-300 ml-1">---</span>
-          <span id="role-badge" class="font-pixel text-xs px-2 py-0.5 rounded inline-block ml-1">---</span>
-        </div>
-
-        <button onclick="logout()" class="mc-button mc-button-red text-xs px-3 py-1 font-pixel flex items-center gap-1" title="Sair da conta">
-          <span>🚪</span>
-          <span>Sair</span>
-        </button>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- CONTAINER DE TOASTS -->
-  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
-
-  <!-- MODAL DE CONFIGURAÇÃO DO SUPABASE -->
-  <div id="config-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4 hidden">
-    <div class="mc-box w-full max-w-xl p-6 space-y-4">
-      <div class="flex justify-between items-center border-b-2 border-stone-700 pb-2">
-        <h3 class="font-pixel text-yellow-400 text-base">⚡ Configuração do Supabase</h3>
-        <button onclick="closeConfigModal()" class="text-stone-400 hover:text-white font-pixel">X</button>
-      </div>
-
-      <p class="text-stone-300 text-sm">Insira abaixo as credenciais do seu projeto Supabase para ativar a sincronização em tempo real e persistência na nuvem.</p>
-
-      <form onsubmit="saveSupabaseConfig(event)" class="space-y-4">
-        <div>
-          <label class="block font-pixel text-xs text-stone-300 mb-1">Supabase Project URL:</label>
-          <input type="url" id="cfg-supabase-url" required placeholder="https://xyz.supabase.co" class="mc-input w-full">
-        </div>
-
-        <div>
-          <label class="block font-pixel text-xs text-stone-300 mb-1">Supabase Anon Key:</label>
-          <input type="text" id="cfg-supabase-key" required placeholder="eyJhbGciOiJIUzI1NiIsInR..." class="mc-input w-full">
-        </div>
-
-        <div class="flex justify-between items-center bg-stone-900 p-2 border border-stone-700">
-          <span class="text-xs text-yellow-400 font-pixel">Precisa do Script SQL?</span>
-          <button type="button" onclick="toggleSqlScript()" class="mc-button text-xs px-2 py-1 font-pixel">
-            📜 Ver / Copiar SQL
-          </button>
-        </div>
-
-        <div id="sql-script-container" class="hidden bg-stone-900 p-3 border border-stone-700 text-xs text-stone-300 space-y-2">
-          <p class="font-pixel text-yellow-400">Execute isto no SQL Editor do seu Supabase:</p>
-          <pre class="bg-black p-2 overflow-x-auto text-green-400 select-all font-mono text-[11px] leading-tight border border-stone-800">
--- 1. Tabela de Produtos
-CREATE TABLE IF NOT EXISTS public.produtos (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  name text NOT NULL,
-  icon text DEFAULT '📦',
-  category text NOT NULL,
-  price_description text NOT NULL,
-  stock int NOT NULL DEFAULT 0,
-  created_at timestamp with time zone DEFAULT now()
-);
-
--- 2. Tabela de Pedidos
-CREATE TABLE IF NOT EXISTS public.pedidos (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  customer_name text NOT NULL,
-  items jsonb NOT NULL,
-  status text NOT NULL DEFAULT 'pendente',
-  total_info text NOT NULL,
-  created_at timestamp with time zone DEFAULT now()
-);
-
--- 3. Habilitar RLS (Row Level Security) e liberar acessos para desenvolvimento:
-ALTER TABLE public.produtos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pedidos ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Acesso Total Produtos" ON public.produtos FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH CHECK (true);
-          </pre>
-        </div>
-
-        <div class="flex gap-2">
-          <button type="submit" class="mc-button mc-button-green w-full py-2 font-pixel text-xs">
-            💾 Salvar e Conectar
-          </button>
-          <button type="button" onclick="closeConfigModal()" class="mc-button w-1/3 py-2 font-pixel text-xs">
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- TELA DE LOGIN INICIAL -->
-  <div id="login-overlay" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
-    <div class="mc-box w-full max-w-md p-6 space-y-6 shadow-2xl">
-      
-      <div class="text-center space-y-2 border-b-2 border-stone-700 pb-4">
-        <div class="w-16 h-16 bg-emerald-700 border-4 border-green-400 flex items-center justify-center text-4xl mx-auto shadow-inner">
-          ⚔️
-        </div>
-        <h2 class="font-pixel text-yellow-400 text-base md:text-lg">ENTRAR NA LOJA</h2>
-        <p class="text-stone-300 text-sm">Lojinha de Trocas do Minecraft</p>
-      </div>
-
-      <!-- ABA SELEÇÃO LOGIN -->
-      <div class="flex border-b-2 border-stone-700 gap-2 text-center">
-        <button id="login-tab-guest" onclick="switchLoginTab('guest')" class="mc-button w-1/2 py-2 font-pixel text-xs mc-button-gold">
-          👤 Convidado
-        </button>
-        <button id="login-tab-admin" onclick="switchLoginTab('admin')" class="mc-button w-1/2 py-2 font-pixel text-xs">
-          ⚙️ Admin
-        </button>
-      </div>
-
-      <!-- PAINEL CONVIDADO -->
-      <div id="login-panel-guest" class="space-y-4">
-        <p class="text-stone-300 text-sm">Digite seu Nick no Minecraft para realizar pedidos e trocar itens.</p>
-        
-        <div>
-          <label class="block font-pixel text-xs text-stone-300 mb-1">Seu Nick no Minecraft:</label>
-          <input type="text" id="login-guest-nick" placeholder="Ex: Steve_BR ou AlexCraft" class="mc-input w-full">
-        </div>
-
-        <button onclick="loginAsGuest()" class="mc-button mc-button-green w-full py-3 font-pixel text-xs">
-          🎮 Entrar como Convidado
-        </button>
-      </div>
-
-      <!-- PAINEL ADMIN -->
-      <div id="login-panel-admin" class="space-y-4 hidden">
-        <p class="text-stone-300 text-sm">Painel do Administrador da Loja.</p>
-        
-        <form onsubmit="loginAsAdmin(event)" class="space-y-3">
-          <div>
-            <label class="block font-pixel text-xs text-stone-300 mb-1">Usuário Admin:</label>
-            <input type="text" id="admin-user-input" required placeholder="Usuário" class="mc-input w-full">
-          </div>
-
-          <div>
-            <label class="block font-pixel text-xs text-stone-300 mb-1">Senha Admin:</label>
-            <input type="password" id="admin-pass-input" required placeholder="Senha" class="mc-input w-full">
-          </div>
-
-          <div id="admin-login-error" class="text-red-400 font-pixel text-xs bg-red-950 p-2 border border-red-700 hidden">
-            ⚠️ Usuário ou senha incorretos!
-          </div>
-
-          <button type="submit" class="mc-button mc-button-gold w-full py-3 font-pixel text-xs">
-            🔑 Autenticar como Admin
-          </button>
-        </form>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- CONTEÚDO PRINCIPAL DA APLICAÇÃO -->
-  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
-    
-    <!-- BANNER CONEXÃO SUPABASE -->
-    <div id="supabase-status-banner" class="mc-box-grass p-4 mb-6 rounded text-white flex flex-col md:flex-row justify-between items-center gap-4">
-      <div>
-        <h2 class="font-pixel text-yellow-300 text-base mb-1" id="sb-status-title">⚡ Supabase: Desconectado</h2>
-        <p class="text-sm" id="sb-status-desc">Configure as credenciais do Supabase para ativar os dados em tempo real na nuvem.</p>
-      </div>
-      <button onclick="openConfigModal()" class="mc-button mc-button-gold font-pixel text-xs px-4 py-2">
-        ⚙️ Configurar Supabase
-      </button>
-    </div>
-
-    <!-- NAVEGAÇÃO DE ABAS -->
-    <div class="flex border-b-4 border-stone-700 mb-6 gap-2">
-      <button id="tab-btn-shop" onclick="switchTab('shop')" class="mc-button font-pixel text-xs md:text-sm px-4 py-2 border-b-0">
-        🛒 Catálogo
-      </button>
-      <button id="tab-btn-my-orders" onclick="switchTab('my-orders')" class="mc-button font-pixel text-xs md:text-sm px-4 py-2 border-b-0">
-        📦 Meus Pedidos
-      </button>
-      <button id="tab-btn-admin" onclick="switchTab('admin')" class="mc-button font-pixel text-xs md:text-sm px-4 py-2 border-b-0 hidden">
-        ⚙️ Painel Admin
-      </button>
-    </div>
-
-    <!-- SEÇÃO 1: CATÁLOGO DE PRODUTOS -->
-    <section id="section-shop" class="space-y-6">
-      
-      <div class="mc-box p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div class="w-full md:w-1/2 flex items-center gap-2">
-          <label class="text-stone-300 font-pixel text-xs">Buscar:</label>
-          <input type="text" id="search-input" oninput="renderShop()" placeholder="Ex: Picareta, Diamante..." class="mc-input w-full text-lg">
-        </div>
-
-        <div class="w-full md:w-1/2 flex items-center gap-2">
-          <label class="text-stone-300 font-pixel text-xs">Categoria:</label>
-          <select id="category-filter" onchange="renderShop()" class="mc-input w-full text-lg bg-stone-900">
-            <option value="ALL">Todas as Categorias</option>
-            <option value="Equipamentos">⚔️ Equipamentos</option>
-            <option value="Blocos">🧱 Blocos</option>
-            <option value="Minerios">💎 Minérios</option>
-            <option value="Pocoes">🧪 Poções</option>
-            <option value="Diversos">📦 Diversos</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="shop-products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Renderizado via JS -->
-      </div>
-    </section>
-
-    <!-- SEÇÃO 2: MEUS PEDIDOS -->
-    <section id="section-my-orders" class="space-y-6 hidden">
-      <div class="mc-box p-4">
-        <h2 class="font-pixel text-yellow-400 text-sm md:text-base mb-1">📜 Acompanhamento de Pedidos</h2>
-        <p class="text-stone-300 text-sm">Acompanhe a entrega dos seus itens trocados no servidor.</p>
-      </div>
-
-      <div class="mc-box p-4 overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="border-b-2 border-stone-600 text-yellow-400 font-pixel text-xs">
-              <th class="p-3">Data / Hora</th>
-              <th class="p-3">Seu Nick</th>
-              <th class="p-3">Itens Solicitados</th>
-              <th class="p-3">Custo Total</th>
-              <th class="p-3">Status</th>
-            </tr>
-          </thead>
-          <tbody id="my-orders-table-body" class="divide-y divide-stone-700 text-lg">
-            <!-- Renderizado via JS -->
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- SEÇÃO 3: PAINEL ADMINISTRADOR -->
-    <section id="section-admin" class="space-y-8 hidden">
-      
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <!-- FORMULÁRIO DE PRODUTO -->
-        <div class="lg:col-span-5">
-          <div class="mc-box p-5 space-y-4">
-            <h2 id="admin-form-title" class="font-pixel text-yellow-400 text-sm md:text-base border-b-2 border-stone-700 pb-2">
-              ➕ Cadastrar Item no Supabase
-            </h2>
-
-            <form id="product-form" onsubmit="handleProductSubmit(event)" class="space-y-4">
-              <input type="hidden" id="prod-id">
-
-              <div>
-                <label class="block font-pixel text-xs text-stone-300 mb-1">Nome do Item:</label>
-                <input type="text" id="prod-name" required placeholder="Ex: Picareta de Netherite" class="mc-input w-full">
-              </div>
-
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block font-pixel text-xs text-stone-300 mb-1">Categoria:</label>
-                  <select id="prod-category" class="mc-input w-full bg-stone-900">
-                    <option value="Equipamentos">Equipamentos</option>
-                    <option value="Blocos">Blocos</option>
-                    <option value="Minerios">Minérios</option>
-                    <option value="Pocoes">Poções</option>
-                    <option value="Diversos">Diversos</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block font-pixel text-xs text-stone-300 mb-1">Estoque:</label>
-                  <input type="number" id="prod-stock" min="0" value="10" required class="mc-input w-full">
-                </div>
-              </div>
-
-              <div>
-                <label class="block font-pixel text-xs text-stone-300 mb-1">Preço / Troca Solicitada:</label>
-                <input type="text" id="prod-price" required placeholder="Ex: 32 Bloco de Esmeraldas" class="mc-input w-full">
-              </div>
-
-              <div>
-                <label class="block font-pixel text-xs text-stone-300 mb-1">Ícone / Emoji:</label>
-                <input type="text" id="prod-icon" placeholder="Ex: ⛏️ ou ⚔️ ou 💎" value="📦" class="mc-input w-full">
-              </div>
-
-              <div class="flex gap-2 pt-2">
-                <button type="submit" id="btn-save-prod" class="mc-button mc-button-green w-full py-2 font-pixel text-xs">
-                  💾 Salvar Produto
-                </button>
-                <button type="button" onclick="resetProductForm()" class="mc-button w-1/3 py-2 font-pixel text-xs">
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- LISTA DE ESTOQUE NO ADMIN -->
-        <div class="lg:col-span-7">
-          <div class="mc-box p-5 space-y-4">
-            <h2 class="font-pixel text-yellow-400 text-sm md:text-base border-b-2 border-stone-700 pb-2">
-              📦 Estoque no Banco de Dados
-            </h2>
-
-            <div class="overflow-x-auto max-h-[420px] overflow-y-auto">
-              <table class="w-full text-left">
-                <thead class="sticky top-0 bg-stone-800 border-b-2 border-stone-600 text-yellow-400 font-pixel text-xs">
-                  <tr>
-                    <th class="p-2">Item</th>
-                    <th class="p-2">Preço</th>
-                    <th class="p-2">Estoque</th>
-                    <th class="p-2 text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="admin-products-table-body" class="divide-y divide-stone-700 text-base">
-                  <!-- Renderizado via JS -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- PAINEL DE PEDIDOS RECEBIDOS -->
-      <div class="mc-box p-5 space-y-4">
-        <h2 class="font-pixel text-yellow-400 text-base border-b-2 border-stone-700 pb-3">
-          📬 Gerenciar Pedidos do Supabase
-        </h2>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b-2 border-stone-600 text-yellow-400 font-pixel text-xs">
-                <th class="p-3">Data</th>
-                <th class="p-3">Jogador / Nick</th>
-                <th class="p-3">Itens</th>
-                <th class="p-3">Total / Custo</th>
-                <th class="p-3">Status</th>
-                <th class="p-3 text-center">Atualizar Status</th>
-              </tr>
-            </thead>
-            <tbody id="admin-orders-table-body" class="divide-y divide-stone-700 text-base">
-              <!-- Renderizado via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </section>
-
-  </main>
-
-  <!-- MODAL DE FAZER PEDIDO -->
-  <div id="order-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-backdrop p-4">
-    <div class="mc-box w-full max-w-lg p-6 space-y-4 relative">
-      <button onclick="closeOrderModal()" class="absolute top-3 right-3 text-stone-400 hover:text-white font-pixel">X</button>
-
-      <h3 class="font-pixel text-yellow-400 text-base border-b-2 border-stone-700 pb-2">
-        🛒 Finalizar Pedido
-      </h3>
-
-      <div id="modal-product-summary" class="bg-stone-900 p-3 border border-stone-700 flex items-center gap-3">
-        <!-- Resumo preenchido via JS -->
-      </div>
-
-      <form onsubmit="handleOrderSubmit(event)" class="space-y-4">
-        <input type="hidden" id="modal-prod-id">
-
-        <div>
-          <label class="block font-pixel text-xs text-stone-300 mb-1">Seu Nick no Minecraft:</label>
-          <input type="text" id="order-nick" required placeholder="Ex: Steve_BR" class="mc-input w-full">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-pixel text-xs text-stone-300 mb-1">Quantidade:</label>
-            <input type="number" id="order-qty" min="1" value="1" oninput="updateModalTotal()" required class="mc-input w-full">
-          </div>
-          <div>
-            <label class="block font-pixel text-xs text-stone-300 mb-1">Estoque Atual:</label>
-            <input type="text" id="modal-stock-display" readonly disabled class="mc-input w-full opacity-60">
-          </div>
-        </div>
-
-        <div class="bg-stone-900 p-3 border border-stone-700">
-          <p class="text-xs text-stone-400 font-pixel">Pagamento em Troca Total:</p>
-          <p id="modal-total-cost" class="text-green-400 font-bold text-lg">---</p>
-        </div>
-
-        <button type="submit" class="mc-button mc-button-green w-full py-3 font-pixel text-xs">
-          ✅ Confirmar Pedido de Troca
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    // ESTADO GLOBAL DA APLICAÇÃO
-    let supabaseClient = null;
-    let currentUserRole = null; // 'admin' | 'guest'
-    let currentNick = '';
-    let products = [];
-    let orders = [];
-    let currentSelectedProduct = null;
-
-    // CREDENCIAIS EXATAS DE ADMIN
-    const ADMIN_USER_EXACT = 'Pedro44247474';
-    const ADMIN_PASS_EXACT = 'Pedro44247474@';
-
-    // DEMO BACKUP DATA (Para fallback em visualização sem Supabase)
-    const DEMO_PRODUCTS = [
-      { id: '1', name: 'Picareta de Netherite', category: 'Equipamentos', price_description: '32 Blocos de Esmeraldas', stock: 5, icon: '⛏️' },
-      { id: '2', name: 'Espada de Diamante Sharp V', category: 'Equipamentos', price_description: '16 Blocos de Ouro', stock: 8, icon: '⚔️' },
-      { id: '3', name: 'Maçã Dourada Encantada', category: 'Diversos', price_description: '64 Ferros', stock: 12, icon: '🍎' },
-      { id: '4', name: 'Totem da Imortalidade', category: 'Diversos', price_description: '1 Lingote de Netherite', stock: 3, icon: '🗿' }
-    ];
-
-    window.onload = function() {
-      initSupabase();
-      checkSavedSession();
-    };
-
-    function initSupabase() {
-      const url = localStorage.getItem('sb_url');
-      const key = localStorage.getItem('sb_key');
-
-      const bannerTitle = document.getElementById('sb-status-title');
-      const bannerDesc = document.getElementById('sb-status-desc');
-
-      if (url && key && window.supabase) {
-        try {
-          supabaseClient = window.supabase.createClient(url, key);
-          bannerTitle.innerText = '⚡ Supabase: Conectado!';
-          bannerTitle.className = 'font-pixel text-green-300 text-base mb-1';
-          bannerDesc.innerText = 'Sincronização em tempo real ativada com o banco de dados.';
-          
-          fetchProductsFromSupabase();
-          fetchOrdersFromSupabase();
-          subscribeRealtime();
-        } catch (err) {
-          console.error('Erro ao conectar com Supabase:', err);
-          bannerTitle.innerText = '⚡ Supabase: Erro de Conexão';
-          bannerTitle.className = 'font-pixel text-red-300 text-base mb-1';
-          bannerDesc.innerText = 'Verifique se a URL e a Anon Key informadas estão corretas.';
-          useFallbackDemoData();
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lojinha de Trocas Minecraft</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Minecraft Style -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .font-minecraft-title {
+            font-family: 'Press Start 2P', cursive;
         }
-      } else {
-        bannerTitle.innerText = '⚡ Supabase: Modo Offline / Não Configurado';
-        bannerTitle.className = 'font-pixel text-yellow-300 text-base mb-1';
-        bannerDesc.innerText = 'Clique em "Configurar Supabase" para ativar a sincronização na nuvem.';
-        useFallbackDemoData();
-      }
-    }
+        .font-minecraft {
+            font-family: 'VT323', monospace;
+        }
+        
+        .mc-button {
+            box-shadow: inset -4px -4px 0px 0px #2a2a2a, inset 4px 4px 0px 0px #ffffff;
+            border: 2px solid #000;
+        }
+        .mc-button:active {
+            box-shadow: inset 4px 4px 0px 0px #2a2a2a, inset -4px -4px 0px 0px #ffffff;
+        }
+        .mc-button-green {
+            background-color: #55aa55;
+            box-shadow: inset -4px -4px 0px 0px #226622, inset 4px 4px 0px 0px #aaffaa;
+        }
+        .mc-button-green:hover { background-color: #449944; }
+        .mc-button-red {
+            background-color: #ff5555;
+            box-shadow: inset -4px -4px 0px 0px #992222, inset 4px 4px 0px 0px #ffaaaa;
+        }
+        .mc-button-red:hover { background-color: #dd4444; }
+        
+        .mc-panel {
+            background-color: #c6c6c6;
+            border: 4px solid #000;
+            box-shadow: inset -4px -4px 0px 0px #555555, inset 4px 4px 0px 0px #ffffff;
+        }
+        
+        .mc-panel-dark {
+            background-color: #212121;
+            border: 4px solid #373737;
+            box-shadow: inset -4px -4px 0px 0px #111111, inset 4px 4px 0px 0px #555555;
+        }
 
-    function useFallbackDemoData() {
-      products = [...DEMO_PRODUCTS];
-      renderShop();
-      renderAdminProducts();
-      renderAdminOrders();
-    }
+        .mc-input {
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #a0a0a0;
+            box-shadow: inset 2px 2px 0px 0px #555;
+        }
+        .mc-input:focus {
+            border-color: #55ff55;
+            outline: none;
+        }
 
-    function openConfigModal() {
-      document.getElementById('cfg-supabase-url').value = localStorage.getItem('sb_url') || '';
-      document.getElementById('cfg-supabase-key').value = localStorage.getItem('sb_key') || '';
-      document.getElementById('config-modal').classList.remove('hidden');
-    }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #555; border: 2px solid #000; }
+    </style>
+</head>
+<body class="bg-stone-900 text-white min-h-screen font-minecraft selection:bg-green-600 selection:text-white">
 
-    function closeConfigModal() {
-      document.getElementById('config-modal').classList.add('hidden');
-    }
-
-    function toggleSqlScript() {
-      const container = document.getElementById('sql-script-container');
-      container.classList.toggle('hidden');
-    }
-
-    function saveSupabaseConfig(e) {
-      e.preventDefault();
-      const url = document.getElementById('cfg-supabase-url').value.trim();
-      const key = document.getElementById('cfg-supabase-key').value.trim();
-
-      localStorage.setItem('sb_url', url);
-      localStorage.setItem('sb_key', key);
-
-      closeConfigModal();
-      showToast('Configurações salvas. Conectando...', 'success');
-      initSupabase();
-    }
-
-    async function fetchProductsFromSupabase() {
-      if (!supabaseClient) return;
-      
-      const { data, error } = await supabaseClient
-        .from('produtos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        showToast('Erro ao buscar produtos do Supabase.', 'error');
-        console.error(error);
-        return;
-      }
-
-      products = data || [];
-      renderShop();
-      renderAdminProducts();
-    }
-
-    async function fetchOrdersFromSupabase() {
-      if (!supabaseClient) return;
-
-      const { data, error } = await supabaseClient
-        .from('pedidos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        showToast('Erro ao buscar pedidos do Supabase.', 'error');
-        console.error(error);
-        return;
-      }
-
-      orders = data || [];
-      renderMyOrders();
-      renderAdminOrders();
-    }
-
-    function subscribeRealtime() {
-      if (!supabaseClient) return;
-
-      supabaseClient
-        .channel('public-db-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, () => {
-          fetchProductsFromSupabase();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => {
-          fetchOrdersFromSupabase();
-        })
-        .subscribe();
-    }
-
-    // AUTENTICAÇÃO E SESSÃO DE USUÁRIO
-    function checkSavedSession() {
-      const savedRole = localStorage.getItem('mc_session_role');
-      const savedNick = localStorage.getItem('mc_user_nick') || 'Convidado';
-
-      if (savedRole) {
-        currentUserRole = savedRole;
-        currentNick = savedNick;
-        hideLoginOverlay();
-      } else {
-        showLoginOverlay();
-      }
-
-      updateUserUI();
-    }
-
-    function showLoginOverlay() {
-      document.getElementById('login-overlay').classList.remove('hidden');
-    }
-
-    function hideLoginOverlay() {
-      document.getElementById('login-overlay').classList.add('hidden');
-    }
-
-    function switchLoginTab(tab) {
-      const guestBtn = document.getElementById('login-tab-guest');
-      const adminBtn = document.getElementById('login-tab-admin');
-      const guestPanel = document.getElementById('login-panel-guest');
-      const adminPanel = document.getElementById('login-panel-admin');
-
-      if (tab === 'guest') {
-        guestBtn.classList.add('mc-button-gold');
-        adminBtn.classList.remove('mc-button-gold');
-        guestPanel.classList.remove('hidden');
-        adminPanel.classList.add('hidden');
-      } else {
-        adminBtn.classList.add('mc-button-gold');
-        guestBtn.classList.remove('mc-button-gold');
-        adminPanel.classList.remove('hidden');
-        guestPanel.classList.add('hidden');
-      }
-    }
-
-    function loginAsGuest() {
-      const nick = document.getElementById('login-guest-nick').value.trim() || 'Steve_Convidado';
-      currentUserRole = 'guest';
-      currentNick = nick;
-
-      localStorage.setItem('mc_session_role', 'guest');
-      localStorage.setItem('mc_user_nick', nick);
-
-      hideLoginOverlay();
-      updateUserUI();
-      switchTab('shop');
-      showToast(`Bem-vindo, ${nick}!`, 'success');
-    }
-
-    function loginAsAdmin(e) {
-      e.preventDefault();
-      const user = document.getElementById('admin-user-input').value.trim();
-      const pass = document.getElementById('admin-pass-input').value;
-      const errorDiv = document.getElementById('admin-login-error');
-
-      if (user === ADMIN_USER_EXACT && pass === ADMIN_PASS_EXACT) {
-        errorDiv.classList.add('hidden');
-        currentUserRole = 'admin';
-        currentNick = 'Pedro44247474 (Admin)';
-
-        localStorage.setItem('mc_session_role', 'admin');
-        localStorage.setItem('mc_user_nick', currentNick);
-
-        hideLoginOverlay();
-        updateUserUI();
-        switchTab('admin');
-        showToast('Login Admin autorizado!', 'success');
-      } else {
-        errorDiv.classList.remove('hidden');
-      }
-    }
-
-    function logout() {
-      localStorage.removeItem('mc_session_role');
-      currentUserRole = null;
-      currentNick = '';
-
-      showLoginOverlay();
-      switchTab('shop');
-      showToast('Sessão encerrada.', 'info');
-    }
-
-    function updateUserUI() {
-      const badge = document.getElementById('role-badge');
-      const userDisplay = document.getElementById('user-display-name');
-      const adminTabBtn = document.getElementById('tab-btn-admin');
-
-      userDisplay.innerText = currentNick || 'Não Logado';
-
-      if (currentUserRole === 'admin') {
-        badge.innerText = ' ADMIN ';
-        badge.className = 'font-pixel text-xs px-2 py-0.5 rounded inline-block ml-1 bg-red-600 text-white animate-pulse';
-        adminTabBtn.classList.remove('hidden');
-      } else {
-        badge.innerText = ' CONVIDADO ';
-        badge.className = 'font-pixel text-xs px-2 py-0.5 rounded inline-block ml-1 bg-green-600 text-white';
-        adminTabBtn.classList.add('hidden');
-      }
-    }
-
-    function switchTab(tab) {
-      document.getElementById('section-shop').classList.add('hidden');
-      document.getElementById('section-my-orders').classList.add('hidden');
-      document.getElementById('section-admin').classList.add('hidden');
-
-      document.getElementById('tab-btn-shop').classList.remove('mc-button-gold');
-      document.getElementById('tab-btn-my-orders').classList.remove('mc-button-gold');
-      document.getElementById('tab-btn-admin').classList.remove('mc-button-gold');
-
-      if (tab === 'shop') {
-        document.getElementById('section-shop').classList.remove('hidden');
-        document.getElementById('tab-btn-shop').classList.add('mc-button-gold');
-        renderShop();
-      } else if (tab === 'my-orders') {
-        document.getElementById('section-my-orders').classList.remove('hidden');
-        document.getElementById('tab-btn-my-orders').classList.add('mc-button-gold');
-        renderMyOrders();
-      } else if (tab === 'admin' && currentUserRole === 'admin') {
-        document.getElementById('section-admin').classList.remove('hidden');
-        document.getElementById('tab-btn-admin').classList.add('mc-button-gold');
-        renderAdminProducts();
-        renderAdminOrders();
-      }
-    }
-
-    function renderShop() {
-      const grid = document.getElementById('shop-products-grid');
-      const search = document.getElementById('search-input').value.toLowerCase();
-      const cat = document.getElementById('category-filter').value;
-
-      grid.innerHTML = '';
-
-      const filtered = products.filter(p => {
-        const matchSearch = p.name.toLowerCase().includes(search) || p.price_description.toLowerCase().includes(search);
-        const matchCat = cat === 'ALL' || p.category === cat;
-        return matchSearch && matchCat;
-      });
-
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full mc-box p-8 text-center text-stone-400 font-pixel">Nenhum produto cadastrado no momento.</div>`;
-        return;
-      }
-
-      filtered.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'mc-box p-4 flex flex-col justify-between hover:border-yellow-500 transition-all';
-
-        const isOut = p.stock <= 0;
-
-        card.innerHTML = `
-          <div>
-            <div class="flex justify-between items-start mb-2">
-              <span class="text-xs font-pixel px-2 py-0.5 bg-stone-800 border border-stone-600 rounded">${p.category}</span>
-              <span class="text-xs font-pixel px-2 py-0.5 ${isOut ? 'bg-red-900 text-red-200' : 'bg-emerald-900 text-emerald-200'} rounded">
-                ${isOut ? 'Esgotado' : `Estoque: ${p.stock}`}
-              </span>
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="mc-panel w-full max-w-md p-6 text-black relative">
+            <h2 class="font-minecraft-title text-xl text-center mb-6 text-gray-900 tracking-wider">ENTRAR NA LOJA</h2>
+            
+            <div class="flex border-b-2 border-black mb-6">
+                <button id="tab-guest-btn" onclick="switchLoginTab('guest')" class="flex-1 py-2 font-minecraft-title text-xs bg-gray-400 border-t-2 border-l-2 border-r-2 border-black">
+                    Convidado
+                </button>
+                <button id="tab-admin-btn" onclick="switchLoginTab('admin')" class="flex-1 py-2 font-minecraft-title text-xs bg-gray-300 border-b-2 border-black">
+                    Admin
+                </button>
             </div>
 
-            <div class="text-5xl text-center my-3">${p.icon || '📦'}</div>
-
-            <h3 class="font-pixel text-yellow-300 text-sm leading-snug mb-2">${p.name}</h3>
-
-            <div class="bg-stone-900 p-2 border border-stone-700 mb-4">
-              <p class="text-xs text-stone-400 font-pixel">Preço / Troca:</p>
-              <p class="text-green-400 font-bold text-lg">${p.price_description}</p>
+            <!-- Form Convidado -->
+            <div id="form-guest" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold mb-1">Seu Nick no Minecraft:</label>
+                    <input type="text" id="guest-username" placeholder="Ex: Steve_Craft" class="w-full p-2 mc-input text-lg">
+                </div>
+                <button onclick="loginAsGuest()" class="w-full py-3 mc-button mc-button-green text-white font-minecraft-title text-sm tracking-wider">
+                    ENTRAR COMO CONVIDADO
+                </button>
             </div>
-          </div>
 
-          <button 
-            onclick="openOrderModal('${p.id}')" 
-            ${isOut ? 'disabled' : ''} 
-            class="mc-button ${isOut ? 'opacity-50 cursor-not-allowed' : 'mc-button-green'} w-full py-2 font-pixel text-xs">
-            ${isOut ? '🚫 Esgotado' : '📦 Fazer Pedido'}
-          </button>
-        `;
-        grid.appendChild(card);
-      });
-    }
-
-    function openOrderModal(prodId) {
-      currentSelectedProduct = products.find(p => String(p.id) === String(prodId));
-      if (!currentSelectedProduct) return;
-
-      document.getElementById('modal-prod-id').value = currentSelectedProduct.id;
-      document.getElementById('modal-stock-display').value = `${currentSelectedProduct.stock} unidades`;
-
-      document.getElementById('modal-product-summary').innerHTML = `
-        <div class="text-3xl">${currentSelectedProduct.icon || '📦'}</div>
-        <div>
-          <h4 class="font-pixel text-yellow-300 text-xs">${currentSelectedProduct.name}</h4>
-          <p class="text-sm text-stone-300">Custo unitário: <span class="text-green-400">${currentSelectedProduct.price_description}</span></p>
+            <!-- Form Admin -->
+            <div id="form-admin" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-sm font-bold mb-1">Usuário Administrador:</label>
+                    <input type="text" id="admin-user" placeholder="Usuário" class="w-full p-2 mc-input text-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">Senha:</label>
+                    <input type="password" id="admin-pass" placeholder="••••••••" class="w-full p-2 mc-input text-lg">
+                </div>
+                <div id="admin-error" class="text-red-600 text-sm font-bold hidden">
+                    Usuário ou senha incorretos!
+                </div>
+                <button onclick="loginAsAdmin()" class="w-full py-3 mc-button mc-button-green text-white font-minecraft-title text-sm tracking-wider">
+                    ACESSAR COMO ADMIN
+                </button>
+            </div>
         </div>
-      `;
+    </div>
 
-      document.getElementById('order-nick').value = localStorage.getItem('mc_user_nick') || '';
-      document.getElementById('order-qty').value = 1;
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container" class="opacity-30 pointer-events-none transition-all duration-300">
+        <!-- HEADER -->
+        <header class="bg-stone-800 border-b-4 border-black p-4 sticky top-0 z-40">
+            <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">⛏️</span>
+                    <div>
+                        <h1 class="font-minecraft-title text-xl text-yellow-400 tracking-wider">LOJA DE TROCAS</h1>
+                        <p class="text-xs text-gray-400">Troque seus itens do Minecraft com facilidade!</p>
+                    </div>
+                </div>
 
-      updateModalTotal();
-      document.getElementById('order-modal').classList.remove('hidden');
-    }
+                <div class="flex items-center gap-4">
+                    <!-- Status do Banco de Dados -->
+                    <div id="db-status-badge" class="px-3 py-1 bg-green-900/80 border border-green-500 text-green-200 text-xs rounded flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-400"></span>
+                        <span>Supabase Conectado</span>
+                    </div>
 
-    function closeOrderModal() {
-      document.getElementById('order-modal').classList.add('hidden');
-    }
+                    <!-- User Profile Info -->
+                    <div id="user-info-bar" class="flex items-center gap-3 bg-stone-900 p-2 px-3 border-2 border-stone-600">
+                        <span id="user-badge" class="font-minecraft-title text-xs text-green-400">---</span>
+                        <button onclick="logout()" class="mc-button mc-button-red text-xs px-2 py-1 text-white font-bold">
+                            SAIR
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-    function updateModalTotal() {
-      if (!currentSelectedProduct) return;
-      const qty = parseInt(document.getElementById('order-qty').value) || 1;
-      document.getElementById('modal-total-cost').innerText = `${qty}x [ ${currentSelectedProduct.price_description} ]`;
-    }
+        <!-- NAVIGATION TABS -->
+        <div class="max-w-6xl mx-auto px-4 mt-6">
+            <div class="flex border-b-4 border-black gap-2">
+                <button id="nav-catalog" onclick="switchMainTab('catalog')" class="py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black">
+                    🛒 Catálogo
+                </button>
+                <button id="nav-orders" onclick="switchMainTab('orders')" class="py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black">
+                    📦 Pedidos <span id="orders-count" class="bg-yellow-500 text-black px-1 rounded text-xs ml-1">0</span>
+                </button>
+                <button id="nav-admin" onclick="switchMainTab('admin')" class="py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black hidden">
+                    ⚙️ Painel Admin
+                </button>
+            </div>
+        </div>
 
-    async function handleOrderSubmit(e) {
-      e.preventDefault();
+        <!-- MAIN CONTENT AREA -->
+        <main class="max-w-6xl mx-auto p-4">
+            
+            <!-- SECTION 1: CATALOGO -->
+            <section id="section-catalog" class="space-y-6">
+                <div class="mc-panel-dark p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div class="w-full md:w-1/2">
+                        <input type="text" id="search-input" oninput="renderCatalog()" placeholder="Buscar item..." class="w-full p-2 mc-input text-lg">
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <select id="filter-category" onchange="renderCatalog()" class="p-2 mc-input text-lg bg-black text-white w-full">
+                            <option value="all">Todas Categorias</option>
+                            <option value="Recursos">Recursos</option>
+                            <option value="Equipamentos">Equipamentos</option>
+                            <option value="Blocos">Blocos</option>
+                            <option value="Comida/Poções">Comida/Poções</option>
+                        </select>
+                    </div>
+                </div>
 
-      const nick = document.getElementById('order-nick').value.trim();
-      const qty = parseInt(document.getElementById('order-qty').value);
+                <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
 
-      if (qty <= 0 || qty > currentSelectedProduct.stock) {
-        showToast('Quantidade inválida para o estoque disponível!', 'error');
-        return;
-      }
+            <!-- SECTION 2: PEDIDOS -->
+            <section id="section-orders" class="space-y-6 hidden">
+                <div class="mc-panel-dark p-6">
+                    <h2 class="font-minecraft-title text-lg text-yellow-400 mb-4">ACOMPANHAMENTO DE PEDIDOS</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b-2 border-stone-700 text-yellow-400 font-minecraft-title text-xs">
+                                    <th class="p-3">#ID</th>
+                                    <th class="p-3">Cliente</th>
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Qtd</th>
+                                    <th class="p-3">Pagamento (Troca)</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right" id="th-actions">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body" class="divide-y divide-stone-800 text-lg"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
 
-      localStorage.setItem('mc_user_nick', nick);
+            <!-- SECTION 3: PAINEL ADMIN -->
+            <section id="section-admin" class="space-y-6 hidden">
+                <div class="mc-panel p-6 text-black">
+                    <h2 class="font-minecraft-title text-lg mb-4 text-stone-900">ADICIONAR / EDITAR PRODUTO</h2>
+                    <form id="product-form" onsubmit="handleSaveProduct(event)" class="space-y-4">
+                        <input type="hidden" id="prod-id">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Nome do Item a Vender:</label>
+                                <input type="text" id="prod-nome" required placeholder="Ex: Espada de Diamante" class="w-full p-2 mc-input text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Categoria:</label>
+                                <select id="prod-categoria" class="w-full p-2 mc-input text-lg bg-black text-white">
+                                    <option value="Recursos">Recursos</option>
+                                    <option value="Equipamentos">Equipamentos</option>
+                                    <option value="Blocos">Blocos</option>
+                                    <option value="Comida/Poções">Comida/Poções</option>
+                                </select>
+                            </div>
+                        </div>
 
-      if (supabaseClient) {
-        // Registrar Pedido no Supabase
-        const orderPayload = {
-          customer_name: nick,
-          items: [{ product_id: currentSelectedProduct.id, name: currentSelectedProduct.name, quantity: qty }],
-          status: 'pendente',
-          total_info: `${qty}x (${currentSelectedProduct.price_description})`
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Ícone / Emoji / URL Imagem:</label>
+                                <input type="text" id="prod-imagem" required placeholder="Ex: 💎 ou URL" class="w-full p-2 mc-input text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Preço (Item cobrado):</label>
+                                <input type="text" id="prod-preco-item" required placeholder="Ex: Barras de Ferro" class="w-full p-2 mc-input text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Preço (Qtd cobrada):</label>
+                                <input type="number" id="prod-preco-qtd" required min="1" placeholder="Ex: 10" class="w-full p-2 mc-input text-lg">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Estoque Inicial:</label>
+                            <input type="number" id="prod-estoque" required min="0" placeholder="Ex: 64" class="w-full p-2 mc-input text-lg">
+                        </div>
+
+                        <div class="flex gap-4 pt-2">
+                            <button type="submit" id="save-prod-btn" class="flex-1 py-3 mc-button mc-button-green text-white font-minecraft-title text-xs">
+                                SALVAR PRODUTO NO SUPABASE
+                            </button>
+                            <button type="button" onclick="resetProductForm()" class="py-3 px-6 mc-button bg-gray-500 text-white font-minecraft-title text-xs">
+                                LIMPAR
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL FAZER PEDIDO -->
+    <div id="order-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="mc-panel w-full max-w-md p-6 text-black relative">
+            <button onclick="closeOrderModal()" class="absolute top-2 right-2 font-minecraft-title text-red-600 font-bold text-lg">X</button>
+            <h2 class="font-minecraft-title text-lg text-center mb-4 text-stone-900">FAZER PEDIDO</h2>
+            
+            <div id="order-modal-details" class="bg-gray-300 p-3 mb-4 border-2 border-black text-sm"></div>
+
+            <form onsubmit="submitOrder(event)" class="space-y-4">
+                <input type="hidden" id="order-prod-id">
+                <div>
+                    <label class="block text-sm font-bold mb-1">Quantidade Desejada:</label>
+                    <input type="number" id="order-qtd" value="1" min="1" oninput="calculateOrderTotal()" class="w-full p-2 mc-input text-lg">
+                </div>
+
+                <div class="bg-yellow-100 p-3 border-2 border-yellow-600 text-stone-900">
+                    <span class="text-xs font-bold block">TOTAL A PAGAR NA TROCA:</span>
+                    <span id="order-total-display" class="font-minecraft-title text-sm text-green-700">---</span>
+                </div>
+
+                <button type="submit" id="submit-order-btn" class="w-full py-3 mc-button mc-button-green text-white font-minecraft-title text-xs">
+                    CONFIRMAR PEDIDO DE TROCA
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAÇÃO DIRETA DO SUPABASE NO CÓDIGO
+        const SUPABASE_URL = "https://jjthqwziyblaknxzlxyq.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_-1d4BJMLldRrPXLEXZdCng_iI8bPLit"; // Substitua aqui pela sua chave publishable completa se necessário
+
+        let supabaseClient = null;
+        try {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {
+            console.error("Erro ao conectar no Supabase:", e);
+        }
+
+        // STATE DA APLICAÇÃO
+        let currentUser = JSON.parse(localStorage.getItem('mc_user')) || null;
+        let products = [];
+        let orders = [];
+
+        window.onload = function() {
+            if (currentUser) {
+                initApp();
+            } else {
+                document.getElementById('login-modal').classList.remove('hidden');
+            }
         };
 
-        const { error: orderError } = await supabaseClient.from('pedidos').insert([orderPayload]);
+        // LOGIN / LOGOUT LOGIC
+        function switchLoginTab(tab) {
+            const guestBtn = document.getElementById('tab-guest-btn');
+            const adminBtn = document.getElementById('tab-admin-btn');
+            const formGuest = document.getElementById('form-guest');
+            const formAdmin = document.getElementById('form-admin');
 
-        if (orderError) {
-          showToast('Erro ao registrar pedido no Supabase.', 'error');
-          console.error(orderError);
-          return;
+            if (tab === 'guest') {
+                guestBtn.className = "flex-1 py-2 font-minecraft-title text-xs bg-gray-400 border-t-2 border-l-2 border-r-2 border-black";
+                adminBtn.className = "flex-1 py-2 font-minecraft-title text-xs bg-gray-300 border-b-2 border-black";
+                formGuest.classList.remove('hidden');
+                formAdmin.classList.add('hidden');
+            } else {
+                adminBtn.className = "flex-1 py-2 font-minecraft-title text-xs bg-gray-400 border-t-2 border-l-2 border-r-2 border-black";
+                guestBtn.className = "flex-1 py-2 font-minecraft-title text-xs bg-gray-300 border-b-2 border-black";
+                formAdmin.classList.remove('hidden');
+                formGuest.classList.add('hidden');
+            }
         }
 
-        // Descontar estoque no Supabase
-        const updatedStock = currentSelectedProduct.stock - qty;
-        await supabaseClient.from('produtos').update({ stock: updatedStock }).eq('id', currentSelectedProduct.id);
-
-        fetchProductsFromSupabase();
-        fetchOrdersFromSupabase();
-      } else {
-        // Fallback local
-        currentSelectedProduct.stock -= qty;
-        orders.unshift({
-          id: String(Date.now()),
-          created_at: new Date().toISOString(),
-          customer_name: nick,
-          items: [{ name: currentSelectedProduct.name, quantity: qty }],
-          total_info: `${qty}x (${currentSelectedProduct.price_description})`,
-          status: 'pendente'
-        });
-
-        renderShop();
-        renderMyOrders();
-        renderAdminProducts();
-        renderAdminOrders();
-      }
-
-      showToast('🎉 Pedido registrado com sucesso!', 'success');
-      closeOrderModal();
-    }
-
-    function renderMyOrders() {
-      const tbody = document.getElementById('my-orders-table-body');
-      const nick = localStorage.getItem('mc_user_nick') || '';
-
-      tbody.innerHTML = '';
-
-      const filtered = nick ? orders.filter(o => o.customer_name && o.customer_name.toLowerCase() === nick.toLowerCase()) : orders;
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-stone-400">Nenhum pedido encontrado.</td></tr>`;
-        return;
-      }
-
-      filtered.forEach(ord => {
-        const tr = document.createElement('tr');
-        const itemText = Array.isArray(ord.items) ? ord.items.map(i => `${i.quantity}x ${i.name}`).join(', ') : 'Item';
-
-        let statusBg = 'bg-yellow-600 text-yellow-100';
-        if (ord.status === 'Concluído' || ord.status === 'entregue') statusBg = 'bg-green-600 text-green-100';
-        if (ord.status === 'Cancelado' || ord.status === 'cancelado') statusBg = 'bg-red-600 text-red-100';
-
-        tr.innerHTML = `
-          <td class="p-3 text-xs font-mono text-stone-400">${new Date(ord.created_at).toLocaleString('pt-BR')}</td>
-          <td class="p-3 font-bold text-stone-200">${ord.customer_name}</td>
-          <td class="p-3 font-pixel text-xs text-yellow-300">${itemText}</td>
-          <td class="p-3 text-green-400 font-bold">${ord.total_info}</td>
-          <td class="p-3"><span class="font-pixel text-xs px-2 py-1 rounded inline-block ${statusBg}">${ord.status}</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    async function handleProductSubmit(e) {
-      e.preventDefault();
-      
-      const prodId = document.getElementById('prod-id').value;
-      const name = document.getElementById('prod-name').value.trim();
-      const category = document.getElementById('prod-category').value;
-      const stock = parseInt(document.getElementById('prod-stock').value);
-      const price_description = document.getElementById('prod-price').value.trim();
-      const icon = document.getElementById('prod-icon').value.trim() || '📦';
-
-      const payload = { name, category, stock, price_description, icon };
-
-      if (supabaseClient) {
-        if (prodId) {
-          await supabaseClient.from('produtos').update(payload).eq('id', prodId);
-          showToast('Item atualizado no Supabase!', 'success');
-        } else {
-          await supabaseClient.from('produtos').insert([payload]);
-          showToast('Item adicionado ao Supabase!', 'success');
+        function loginAsGuest() {
+            const nick = document.getElementById('guest-username').value.trim();
+            if (!nick) return alert("Digite seu nick no Minecraft!");
+            currentUser = { role: 'guest', name: nick };
+            localStorage.setItem('mc_user', JSON.stringify(currentUser));
+            initApp();
         }
-        fetchProductsFromSupabase();
-      } else {
-        if (prodId) {
-          const idx = products.findIndex(p => String(p.id) === String(prodId));
-          if (idx !== -1) products[idx] = { ...products[idx], ...payload };
-          showToast('Item atualizado localmente!', 'info');
-        } else {
-          products.unshift({ id: String(Date.now()), ...payload });
-          showToast('Item adicionado localmente!', 'info');
+
+        function loginAsAdmin() {
+            const user = document.getElementById('admin-user').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
+
+            if (user === 'Pedro44247474' && pass === 'Pedro44247474@') {
+                currentUser = { role: 'admin', name: 'Pedro (Admin)' };
+                localStorage.setItem('mc_user', JSON.stringify(currentUser));
+                document.getElementById('admin-error').classList.add('hidden');
+                initApp();
+            } else {
+                document.getElementById('admin-error').classList.remove('hidden');
+            }
         }
-        renderShop();
-        renderAdminProducts();
-      }
 
-      resetProductForm();
-    }
-
-    function editProduct(prodId) {
-      const p = products.find(prod => String(prod.id) === String(prodId));
-      if (!p) return;
-
-      document.getElementById('prod-id').value = p.id;
-      document.getElementById('prod-name').value = p.name;
-      document.getElementById('prod-category').value = p.category;
-      document.getElementById('prod-stock').value = p.stock;
-      document.getElementById('prod-price').value = p.price_description;
-      document.getElementById('prod-icon').value = p.icon || '📦';
-
-      document.getElementById('admin-form-title').innerText = '✏️ Editar Item';
-      document.getElementById('btn-save-prod').innerText = '💾 Atualizar Produto';
-    }
-
-    async function deleteProduct(prodId) {
-      if (!confirm('Deseja realmente excluir este produto?')) return;
-
-      if (supabaseClient) {
-        await supabaseClient.from('produtos').delete().eq('id', prodId);
-        showToast('Produto removido do Supabase!', 'info');
-        fetchProductsFromSupabase();
-      } else {
-        products = products.filter(p => String(p.id) !== String(prodId));
-        showToast('Produto removido localmente!', 'info');
-        renderShop();
-        renderAdminProducts();
-      }
-    }
-
-    function resetProductForm() {
-      document.getElementById('product-form').reset();
-      document.getElementById('prod-id').value = '';
-      document.getElementById('admin-form-title').innerText = '➕ Cadastrar Item no Supabase';
-      document.getElementById('btn-save-prod').innerText = '💾 Salvar Produto';
-    }
-
-    function renderAdminProducts() {
-      const tbody = document.getElementById('admin-products-table-body');
-      tbody.innerHTML = '';
-
-      if (products.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-stone-400">Nenhum produto cadastrado.</td></tr>`;
-        return;
-      }
-
-      products.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2 flex items-center gap-2">
-            <span class="text-xl">${p.icon || '📦'}</span>
-            <div>
-              <span class="font-pixel text-xs text-yellow-300">${p.name}</span><br>
-              <span class="text-xs text-stone-400">${p.category}</span>
-            </div>
-          </td>
-          <td class="p-2 text-green-400 text-sm">${p.price_description}</td>
-          <td class="p-2 font-bold">${p.stock}</td>
-          <td class="p-2 text-center space-x-1">
-            <button onclick="editProduct('${p.id}')" class="mc-button text-xs px-2 py-1 bg-blue-700">✏️</button>
-            <button onclick="deleteProduct('${p.id}')" class="mc-button mc-button-red text-xs px-2 py-1">🗑️</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function renderAdminOrders() {
-      const tbody = document.getElementById('admin-orders-table-body');
-      tbody.innerHTML = '';
-
-      if (orders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-stone-400">Nenhum pedido registrado.</td></tr>`;
-        return;
-      }
-
-      orders.forEach(ord => {
-        const tr = document.createElement('tr');
-        const itemText = Array.isArray(ord.items) ? ord.items.map(i => `${i.quantity}x ${i.name}`).join(', ') : 'Item';
-
-        let statusBg = 'bg-yellow-600 text-yellow-100';
-        if (ord.status === 'Concluído' || ord.status === 'entregue') statusBg = 'bg-green-600 text-green-100';
-        if (ord.status === 'Cancelado' || ord.status === 'cancelado') statusBg = 'bg-red-600 text-red-100';
-
-        tr.innerHTML = `
-          <td class="p-3 text-xs font-mono text-stone-400">${new Date(ord.created_at).toLocaleString('pt-BR')}</td>
-          <td class="p-3 font-bold text-emerald-400">${ord.customer_name}</td>
-          <td class="p-3 font-pixel text-xs text-yellow-300">${itemText}</td>
-          <td class="p-3 text-green-400 text-sm">${ord.total_info}</td>
-          <td class="p-3"><span class="font-pixel text-xs px-2 py-1 rounded inline-block ${statusBg}">${ord.status}</span></td>
-          <td class="p-3 text-center">
-            <div class="flex gap-1 justify-center">
-              <button id="btn-done-${ord.id}" onclick="updateOrderStatus('${ord.id}', 'Concluído')" class="mc-button mc-button-green text-xs px-2 py-1">🟢 Concluído</button>
-              <button id="btn-cancel-${ord.id}" onclick="updateOrderStatus('${ord.id}', 'Cancelado')" class="mc-button mc-button-red text-xs px-2 py-1">🔴 Cancelado</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    async function updateOrderStatus(orderId, newStatus) {
-      if (supabaseClient) {
-        const { error } = await supabaseClient
-          .from('pedidos')
-          .update({ status: newStatus })
-          .eq('id', orderId);
-
-        if (error) {
-          showToast('Erro ao atualizar status do pedido.', 'error');
-          console.error(error);
-        } else {
-          showToast(`Pedido marcado como "${newStatus}"!`, 'info');
-          fetchOrdersFromSupabase();
+        function logout() {
+            localStorage.removeItem('mc_user');
+            currentUser = null;
+            location.reload();
         }
-      } else {
-        const ord = orders.find(o => String(o.id) === String(orderId));
-        if (ord) {
-          ord.status = newStatus;
-          showToast(`Status alterado para "${newStatus}"`, 'info');
-          renderMyOrders();
-          renderAdminOrders();
+
+        function initApp() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('opacity-30', 'pointer-events-none');
+            document.getElementById('user-badge').innerText = `${currentUser.name} (${currentUser.role.toUpperCase()})`;
+
+            if (currentUser.role === 'admin') {
+                document.getElementById('nav-admin').classList.remove('hidden');
+            }
+
+            loadData();
         }
-      }
-    }
 
-    function showToast(msg, type = 'info') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
+        // CARREGAR DADOS DO SUPABASE
+        async function loadData() {
+            if (!supabaseClient) return;
 
-      let borderCol = 'border-yellow-500';
-      if (type === 'success') borderCol = 'border-green-500';
-      if (type === 'error') borderCol = 'border-red-500';
+            try {
+                // Fetch produtos
+                const { data: prodData, error: prodErr } = await supabaseClient
+                    .from('produtos')
+                    .select('*')
+                    .order('id', { ascending: false });
+                
+                if (!prodErr && prodData) products = prodData;
 
-      toast.className = `mc-box p-3 border-l-8 ${borderCol} text-sm font-pixel text-white flex items-center justify-between gap-2 shadow-xl`;
-      toast.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="text-stone-400 font-bold ml-2">X</button>`;
+                // Fetch pedidos
+                const { data: ordData, error: ordErr } = await supabaseClient
+                    .from('pedidos')
+                    .select('*')
+                    .order('id', { ascending: false });
+                
+                if (!ordErr && ordData) orders = ordData;
 
-      container.appendChild(toast);
-      setTimeout(() => toast && toast.remove(), 4000);
-    }
-  </script>
+                // Realtime Subscriptions
+                supabaseClient.channel('realtime_shop')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, () => loadData())
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => loadData())
+                    .subscribe();
+
+            } catch (err) {
+                console.error("Erro ao carregar do Supabase:", err);
+            }
+
+            document.getElementById('orders-count').innerText = orders.length;
+            renderCatalog();
+            renderOrders();
+        }
+
+        // RENDER CATÁLOGO
+        function renderCatalog() {
+            const grid = document.getElementById('catalog-grid');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const category = document.getElementById('filter-category').value;
+
+            grid.innerHTML = '';
+
+            const filtered = products.filter(p => {
+                const matchSearch = p.nome.toLowerCase().includes(search);
+                const matchCat = category === 'all' || p.categoria === category;
+                return matchSearch && matchCat;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10 font-minecraft-title text-sm">Nenhum item encontrado no estoque!</div>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const isEmoji = p.imagem.length <= 4;
+                const imgHtml = isEmoji 
+                    ? `<span class="text-5xl select-none">${p.imagem}</span>` 
+                    : `<img src="${p.imagem}" class="w-16 h-16 object-contain" alt="${p.nome}">`;
+
+                const isAdmin = currentUser && currentUser.role === 'admin';
+
+                grid.innerHTML += `
+                    <div class="mc-panel-dark p-4 flex flex-col justify-between relative group">
+                        ${isAdmin ? `
+                            <div class="absolute top-2 right-2 flex gap-1">
+                                <button onclick="editProduct(\${p.id})" class="bg-blue-600 text-white text-xs px-2 py-1 font-bold rounded">✏️</button>
+                                <button onclick="deleteProduct(\${p.id})" class="bg-red-600 text-white text-xs px-2 py-1 font-bold rounded">🗑️</button>
+                            </div>
+                        ` : ''}
+                        
+                        <div>
+                            <div class="bg-stone-900 border-2 border-stone-700 h-28 flex items-center justify-center mb-3">
+                                ${imgHtml}
+                            </div>
+                            <span class="text-xs bg-stone-800 text-yellow-500 px-2 py-0.5 rounded border border-stone-700">${p.categoria}</span>
+                            <h3 class="font-minecraft-title text-sm text-white mt-2">${p.nome}</h3>
+                            
+                            <div class="mt-3 p-2 bg-black/40 border border-stone-800 text-xs space-y-1">
+                                <p class="text-gray-300">Custa: <span class="text-green-400 font-bold">${p.preco_quantidade}x ${p.preco_item}</span></p>
+                                <p class="text-gray-400">Estoque: <span class="${p.estoque > 0 ? 'text-white' : 'text-red-500 font-bold'}">${p.estoque} unidades</span></p>
+                            </div>
+                        </div>
+
+                        <button onclick="openOrderModal(${p.id})" ${p.estoque <= 0 ? 'disabled' : ''} 
+                            class="mt-4 w-full py-2 mc-button ${p.estoque > 0 ? 'mc-button-green text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'} font-minecraft-title text-xs">
+                            ${p.estoque > 0 ? 'TROCAR ITEM' : 'SEM ESTOQUE'}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // SALVAR PRODUTO (ADMIN)
+        async function handleSaveProduct(e) {
+            e.preventDefault();
+            const btn = document.getElementById('save-prod-btn');
+            btn.disabled = true;
+            btn.innerText = "SALVANDO...";
+
+            const id = document.getElementById('prod-id').value;
+            const nome = document.getElementById('prod-nome').value.trim();
+            const categoria = document.getElementById('prod-categoria').value;
+            const imagem = document.getElementById('prod-imagem').value.trim();
+            const preco_item = document.getElementById('prod-preco-item').value.trim();
+            const preco_quantidade = parseInt(document.getElementById('prod-preco-qtd').value);
+            const estoque = parseInt(document.getElementById('prod-estoque').value);
+
+            const payload = { nome, categoria, imagem, preco_item, preco_quantidade, estoque };
+
+            if (id) {
+                await supabaseClient.from('produtos').update(payload).eq('id', id);
+            } else {
+                await supabaseClient.from('produtos').insert([payload]);
+            }
+
+            resetProductForm();
+            switchMainTab('catalog');
+            await loadData();
+
+            btn.disabled = false;
+            btn.innerText = "SALVAR PRODUTO NO SUPABASE";
+            alert("Produto salvo com sucesso!");
+        }
+
+        function editProduct(id) {
+            const p = products.find(x => String(x.id) === String(id));
+            if (!p) return;
+            document.getElementById('prod-id').value = p.id;
+            document.getElementById('prod-nome').value = p.nome;
+            document.getElementById('prod-categoria').value = p.categoria;
+            document.getElementById('prod-imagem').value = p.imagem;
+            document.getElementById('prod-preco-item').value = p.preco_item;
+            document.getElementById('prod-preco-qtd').value = p.preco_quantidade;
+            document.getElementById('prod-estoque').value = p.estoque;
+            switchMainTab('admin');
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+            await supabaseClient.from('produtos').delete().eq('id', id);
+            await loadData();
+        }
+
+        function resetProductForm() {
+            document.getElementById('prod-id').value = '';
+            document.getElementById('product-form').reset();
+        }
+
+        // FAZER PEDIDO (CONVIDADO)
+        let selectedProductForOrder = null;
+
+        function openOrderModal(prodId) {
+            selectedProductForOrder = products.find(p => String(p.id) === String(prodId));
+            if (!selectedProductForOrder) return;
+
+            document.getElementById('order-prod-id').value = selectedProductForOrder.id;
+            document.getElementById('order-qtd').value = 1;
+            document.getElementById('order-qtd').max = selectedProductForOrder.estoque;
+
+            document.getElementById('order-modal-details').innerHTML = `
+                <p><strong>Item:</strong> ${selectedProductForOrder.nome}</p>
+                <p><strong>Preço unitário:</strong> ${selectedProductForOrder.preco_quantidade}x ${selectedProductForOrder.preco_item}</p>
+                <p><strong>Estoque disponível:</strong> ${selectedProductForOrder.estoque}</p>
+            `;
+
+            calculateOrderTotal();
+            document.getElementById('order-modal').classList.remove('hidden');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').classList.add('hidden');
+        }
+
+        function calculateOrderTotal() {
+            if (!selectedProductForOrder) return;
+            const qtd = parseInt(document.getElementById('order-qtd').value) || 1;
+            const total = qtd * selectedProductForOrder.preco_quantidade;
+            document.getElementById('order-total-display').innerText = `${total}x ${selectedProductForOrder.preco_item}`;
+        }
+
+        async function submitOrder(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-order-btn');
+            btn.disabled = true;
+            btn.innerText = "ENVIANDO PEDIDO...";
+
+            const qtd = parseInt(document.getElementById('order-qtd').value);
+            if (qtd > selectedProductForOrder.estoque) {
+                alert("Quantidade maior do que o estoque disponível!");
+                btn.disabled = false;
+                return;
+            }
+
+            const totalPagamento = `${qtd * selectedProductForOrder.preco_quantidade}x ${selectedProductForOrder.preco_item}`;
+
+            // Insere pedido
+            await supabaseClient.from('pedidos').insert([{
+                cliente: currentUser.name,
+                produto_id: selectedProductForOrder.id,
+                produto_nome: selectedProductForOrder.nome,
+                quantidade: qtd,
+                total_pagamento: totalPagamento,
+                status: 'Pendente'
+            }]);
+
+            // Atualiza estoque no Supabase
+            const novoEstoque = selectedProductForOrder.estoque - qtd;
+            await supabaseClient.from('produtos').update({ estoque: novoEstoque }).eq('id', selectedProductForOrder.id);
+
+            closeOrderModal();
+            switchMainTab('orders');
+            await loadData();
+
+            btn.disabled = false;
+            btn.innerText = "CONFIRMAR PEDIDO DE TROCA";
+            alert("Pedido enviado com sucesso!");
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('orders-table-body');
+            const thActions = document.getElementById('th-actions');
+            tbody.innerHTML = '';
+
+            const isAdmin = currentUser && currentUser.role === 'admin';
+            if (!isAdmin) {
+                thActions.classList.add('hidden');
+            } else {
+                thActions.classList.remove('hidden');
+            }
+
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">Nenhum pedido realizado ainda.</td></tr>`;
+                return;
+            }
+
+            orders.forEach(o => {
+                let statusColor = 'text-yellow-400';
+                if (o.status === 'Concluído') statusColor = 'text-green-400';
+                if (o.status === 'Cancelado') statusColor = 'text-red-400';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 text-gray-400">#${o.id}</td>
+                        <td class="p-3 font-bold text-white">${o.cliente}</td>
+                        <td class="p-3 text-yellow-300">${o.produto_nome}</td>
+                        <td class="p-3">${o.quantidade}</td>
+                        <td class="p-3 text-green-300">${o.total_pagamento}</td>
+                        <td class="p-3 font-bold ${statusColor}">${o.status}</td>
+                        ${isAdmin ? `
+                            <td class="p-3 text-right space-x-1">
+                                <button onclick="updateOrderStatus(\${o.id}, 'Concluído')" class="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 rounded font-bold">✔</button>
+                                <button onclick="updateOrderStatus(\${o.id}, 'Cancelado')" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded font-bold">✖</button>
+                            </td>
+                        ` : ''}
+                    </tr>
+                `;
+            });
+        }
+
+        async function updateOrderStatus(orderId, status) {
+            await supabaseClient.from('pedidos').update({ status }).eq('id', orderId);
+            await loadData();
+        }
+
+        // SWITCH TABS
+        function switchMainTab(tab) {
+            const secCat = document.getElementById('section-catalog');
+            const secOrd = document.getElementById('section-orders');
+            const secAdm = document.getElementById('section-admin');
+
+            const btnCat = document.getElementById('nav-catalog');
+            const btnOrd = document.getElementById('nav-orders');
+            const btnAdm = document.getElementById('nav-admin');
+
+            secCat.classList.add('hidden');
+            secOrd.classList.add('hidden');
+            secAdm.classList.add('hidden');
+
+            btnCat.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black";
+            btnOrd.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black";
+            btnAdm.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black hidden";
+            if (currentUser.role === 'admin') btnAdm.classList.remove('hidden');
+
+            if (tab === 'catalog') {
+                secCat.classList.remove('hidden');
+                btnCat.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
+            } else if (tab === 'orders') {
+                secOrd.classList.remove('hidden');
+                btnOrd.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
+            } else if (tab === 'admin') {
+                secAdm.classList.remove('hidden');
+                btnAdm.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
+            }
+        }
+    </script>
 </body>
 </html>
