@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lojinha de Trocas Minecraft (Supabase)</title>
+  <title>Lojinha de Trocas Minecraft (Supabase Realtime)</title>
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Supabase JS Client v2 CDN -->
@@ -41,7 +41,7 @@
       font-family: 'Press Start 2P', cursive;
     }
 
-    /* Estilo Minecraft GUI */
+    /* Estilo Minecraft GUI Pixelado */
     .mc-box {
       background-color: #2b2b2b;
       border: 4px solid #4a4a4a;
@@ -140,6 +140,18 @@
       background-color: rgba(0, 0, 0, 0.82);
       backdrop-filter: blur(3px);
     }
+
+    /* Custom Scrollbar estilo Minecraft */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1a1a1a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #555;
+      border: 2px solid #222;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between antialiased">
@@ -155,14 +167,14 @@
         </div>
         <div>
           <h1 class="font-pixel text-yellow-400 text-sm md:text-lg tracking-wider drop-shadow">CRAFT-SHOP</h1>
-          <p class="text-xs text-stone-400">Mercado de Trocas com Supabase</p>
+          <p class="text-xs text-stone-400">Lojinha de Trocas Minecraft com Supabase</p>
         </div>
       </div>
 
-      <!-- STATUS E LOGOUT -->
+      <!-- STATUS E PERFIL -->
       <div class="flex items-center gap-3 bg-stone-800 p-2 border-2 border-stone-600 rounded">
         <div class="text-sm">
-          <span class="text-stone-400">Usuário:</span>
+          <span class="text-stone-400">Jogador:</span>
           <span id="user-display-name" class="font-pixel text-xs text-yellow-300 ml-1">---</span>
           <span id="role-badge" class="font-pixel text-xs px-2 py-0.5 rounded inline-block ml-1">---</span>
         </div>
@@ -187,11 +199,11 @@
         <button onclick="closeConfigModal()" class="text-stone-400 hover:text-white font-pixel">X</button>
       </div>
 
-      <p class="text-stone-300 text-sm">Insira abaixo as credenciais do seu projeto Supabase para ativar a sincronização e salvamento em nuvem.</p>
+      <p class="text-stone-300 text-sm">Insira abaixo as credenciais do seu projeto Supabase para ativar a sincronização em tempo real e persistência na nuvem.</p>
 
       <form onsubmit="saveSupabaseConfig(event)" class="space-y-4">
         <div>
-          <label class="block font-pixel text-xs text-stone-300 mb-1">Supabase URL:</label>
+          <label class="block font-pixel text-xs text-stone-300 mb-1">Supabase Project URL:</label>
           <input type="url" id="cfg-supabase-url" required placeholder="https://xyz.supabase.co" class="mc-input w-full">
         </div>
 
@@ -200,11 +212,17 @@
           <input type="text" id="cfg-supabase-key" required placeholder="eyJhbGciOiJIUzI1NiIsInR..." class="mc-input w-full">
         </div>
 
-        <div class="bg-stone-900 p-3 border border-stone-700 text-xs text-stone-300 space-y-2">
-          <p class="font-pixel text-yellow-400">📜 Script SQL para criar as Tabelas:</p>
-          <pre class="bg-black p-2 overflow-x-auto text-green-400 select-all font-mono text-[11px] leading-tight border border-stone-800">
--- Copie e cole no SQL Editor do seu Supabase:
+        <div class="flex justify-between items-center bg-stone-900 p-2 border border-stone-700">
+          <span class="text-xs text-yellow-400 font-pixel">Precisa do Script SQL?</span>
+          <button type="button" onclick="toggleSqlScript()" class="mc-button text-xs px-2 py-1 font-pixel">
+            📜 Ver / Copiar SQL
+          </button>
+        </div>
 
+        <div id="sql-script-container" class="hidden bg-stone-900 p-3 border border-stone-700 text-xs text-stone-300 space-y-2">
+          <p class="font-pixel text-yellow-400">Execute isto no SQL Editor do seu Supabase:</p>
+          <pre class="bg-black p-2 overflow-x-auto text-green-400 select-all font-mono text-[11px] leading-tight border border-stone-800">
+-- 1. Tabela de Produtos
 CREATE TABLE IF NOT EXISTS public.produtos (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   name text NOT NULL,
@@ -215,6 +233,7 @@ CREATE TABLE IF NOT EXISTS public.produtos (
   created_at timestamp with time zone DEFAULT now()
 );
 
+-- 2. Tabela de Pedidos
 CREATE TABLE IF NOT EXISTS public.pedidos (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   customer_name text NOT NULL,
@@ -224,7 +243,7 @@ CREATE TABLE IF NOT EXISTS public.pedidos (
   created_at timestamp with time zone DEFAULT now()
 );
 
--- Permissões abertas para o modo de desenvolvimento:
+-- 3. Habilitar RLS (Row Level Security) e liberar acessos para desenvolvimento:
 ALTER TABLE public.produtos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pedidos ENABLE ROW LEVEL SECURITY;
 
@@ -269,7 +288,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
 
       <!-- PAINEL CONVIDADO -->
       <div id="login-panel-guest" class="space-y-4">
-        <p class="text-stone-300 text-sm">Entre como convidado para navegar no catálogo e realizar suas ofertas de trocas.</p>
+        <p class="text-stone-300 text-sm">Digite seu Nick no Minecraft para realizar pedidos e trocar itens.</p>
         
         <div>
           <label class="block font-pixel text-xs text-stone-300 mb-1">Seu Nick no Minecraft:</label>
@@ -283,17 +302,17 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
 
       <!-- PAINEL ADMIN -->
       <div id="login-panel-admin" class="space-y-4 hidden">
-        <p class="text-stone-300 text-sm">Acesso de Administrador da Loja.</p>
+        <p class="text-stone-300 text-sm">Painel do Administrador da Loja.</p>
         
         <form onsubmit="loginAsAdmin(event)" class="space-y-3">
           <div>
             <label class="block font-pixel text-xs text-stone-300 mb-1">Usuário Admin:</label>
-            <input type="text" id="admin-user-input" required placeholder="Digite o usuário" class="mc-input w-full">
+            <input type="text" id="admin-user-input" required placeholder="Usuário" class="mc-input w-full">
           </div>
 
           <div>
             <label class="block font-pixel text-xs text-stone-300 mb-1">Senha Admin:</label>
-            <input type="password" id="admin-pass-input" required placeholder="Digite a senha" class="mc-input w-full">
+            <input type="password" id="admin-pass-input" required placeholder="Senha" class="mc-input w-full">
           </div>
 
           <div id="admin-login-error" class="text-red-400 font-pixel text-xs bg-red-950 p-2 border border-red-700 hidden">
@@ -316,7 +335,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
     <div id="supabase-status-banner" class="mc-box-grass p-4 mb-6 rounded text-white flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
         <h2 class="font-pixel text-yellow-300 text-base mb-1" id="sb-status-title">⚡ Supabase: Desconectado</h2>
-        <p class="text-sm" id="sb-status-desc">Configure as credenciais do Supabase para ativar os dados em tempo real.</p>
+        <p class="text-sm" id="sb-status-desc">Configure as credenciais do Supabase para ativar os dados em tempo real na nuvem.</p>
       </div>
       <button onclick="openConfigModal()" class="mc-button mc-button-gold font-pixel text-xs px-4 py-2">
         ⚙️ Configurar Supabase
@@ -367,7 +386,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
     <section id="section-my-orders" class="space-y-6 hidden">
       <div class="mc-box p-4">
         <h2 class="font-pixel text-yellow-400 text-sm md:text-base mb-1">📜 Acompanhamento de Pedidos</h2>
-        <p class="text-stone-300 text-sm">Acompanhe a entrega dos itens solicitados por você no servidor.</p>
+        <p class="text-stone-300 text-sm">Acompanhe a entrega dos seus itens trocados no servidor.</p>
       </div>
 
       <div class="mc-box p-4 overflow-x-auto">
@@ -437,7 +456,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
 
               <div class="flex gap-2 pt-2">
                 <button type="submit" id="btn-save-prod" class="mc-button mc-button-green w-full py-2 font-pixel text-xs">
-                  💾 Salvar no Supabase
+                  💾 Salvar Produto
                 </button>
                 <button type="button" onclick="resetProductForm()" class="mc-button w-1/3 py-2 font-pixel text-xs">
                   Cancelar
@@ -548,7 +567,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
   </div>
 
   <script>
-    // ESTADO DA APLICAÇÃO
+    // ESTADO GLOBAL DA APLICAÇÃO
     let supabaseClient = null;
     let currentUserRole = null; // 'admin' | 'guest'
     let currentNick = '';
@@ -556,15 +575,16 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
     let orders = [];
     let currentSelectedProduct = null;
 
+    // CREDENCIAIS EXATAS DE ADMIN
     const ADMIN_USER_EXACT = 'Pedro44247474';
-    const ADMIN_PASS_EXACT = 'Pedro44247474';
+    const ADMIN_PASS_EXACT = 'Pedro44247474@';
 
-    // DADOS INICIAIS DE DEMONSTRAÇÃO
+    // DEMO BACKUP DATA (Para fallback em visualização sem Supabase)
     const DEMO_PRODUCTS = [
       { id: '1', name: 'Picareta de Netherite', category: 'Equipamentos', price_description: '32 Blocos de Esmeraldas', stock: 5, icon: '⛏️' },
       { id: '2', name: 'Espada de Diamante Sharp V', category: 'Equipamentos', price_description: '16 Blocos de Ouro', stock: 8, icon: '⚔️' },
-      { id: '3', name: 'Maca Dourada Encantada', category: 'Diversos', price_description: '64 Ferros', stock: 12, icon: '🍎' },
-      { id: '4', name: 'Totem da Imortalidade', category: 'Diversos', price_description: '1 Netherite Ingot', stock: 3, icon: '🗿' }
+      { id: '3', name: 'Maçã Dourada Encantada', category: 'Diversos', price_description: '64 Ferros', stock: 12, icon: '🍎' },
+      { id: '4', name: 'Totem da Imortalidade', category: 'Diversos', price_description: '1 Lingote de Netherite', stock: 3, icon: '🗿' }
     ];
 
     window.onload = function() {
@@ -591,7 +611,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
           subscribeRealtime();
         } catch (err) {
           console.error('Erro ao conectar com Supabase:', err);
-          bannerTitle.innerText = '⚡ Supabase: Erro na Conexão';
+          bannerTitle.innerText = '⚡ Supabase: Erro de Conexão';
           bannerTitle.className = 'font-pixel text-red-300 text-base mb-1';
           bannerDesc.innerText = 'Verifique se a URL e a Anon Key informadas estão corretas.';
           useFallbackDemoData();
@@ -599,7 +619,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
       } else {
         bannerTitle.innerText = '⚡ Supabase: Modo Offline / Não Configurado';
         bannerTitle.className = 'font-pixel text-yellow-300 text-base mb-1';
-        bannerDesc.innerText = 'Clique em "Configurar Supabase" para salvar dados na nuvem. Exibindo dados locais.';
+        bannerDesc.innerText = 'Clique em "Configurar Supabase" para ativar a sincronização na nuvem.';
         useFallbackDemoData();
       }
     }
@@ -621,6 +641,11 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
       document.getElementById('config-modal').classList.add('hidden');
     }
 
+    function toggleSqlScript() {
+      const container = document.getElementById('sql-script-container');
+      container.classList.toggle('hidden');
+    }
+
     function saveSupabaseConfig(e) {
       e.preventDefault();
       const url = document.getElementById('cfg-supabase-url').value.trim();
@@ -630,7 +655,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
       localStorage.setItem('sb_key', key);
 
       closeConfigModal();
-      showToast('Configurações salvas. Reconectando...', 'success');
+      showToast('Configurações salvas. Conectando...', 'success');
       initSupabase();
     }
 
@@ -643,7 +668,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
         .order('created_at', { ascending: false });
 
       if (error) {
-        showToast('Erro ao buscar produtos no Supabase.', 'error');
+        showToast('Erro ao buscar produtos do Supabase.', 'error');
         console.error(error);
         return;
       }
@@ -662,7 +687,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
         .order('created_at', { ascending: false });
 
       if (error) {
-        showToast('Erro ao buscar pedidos no Supabase.', 'error');
+        showToast('Erro ao buscar pedidos do Supabase.', 'error');
         console.error(error);
         return;
       }
@@ -676,7 +701,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
       if (!supabaseClient) return;
 
       supabaseClient
-        .channel('schema-db-changes')
+        .channel('public-db-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, () => {
           fetchProductsFromSupabase();
         })
@@ -686,7 +711,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
         .subscribe();
     }
 
-    // AUTHENTICATION AND SESSION LOGIC
+    // AUTENTICAÇÃO E SESSÃO DE USUÁRIO
     function checkSavedSession() {
       const savedRole = localStorage.getItem('mc_session_role');
       const savedNick = localStorage.getItem('mc_user_nick') || 'Convidado';
@@ -919,7 +944,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
       localStorage.setItem('mc_user_nick', nick);
 
       if (supabaseClient) {
-        // Envio via Supabase
+        // Registrar Pedido no Supabase
         const orderPayload = {
           customer_name: nick,
           items: [{ product_id: currentSelectedProduct.id, name: currentSelectedProduct.name, quantity: qty }],
@@ -935,13 +960,14 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
           return;
         }
 
+        // Descontar estoque no Supabase
         const updatedStock = currentSelectedProduct.stock - qty;
         await supabaseClient.from('produtos').update({ stock: updatedStock }).eq('id', currentSelectedProduct.id);
 
         fetchProductsFromSupabase();
         fetchOrdersFromSupabase();
       } else {
-        // Envio local/fallback
+        // Fallback local
         currentSelectedProduct.stock -= qty;
         orders.unshift({
           id: String(Date.now()),
@@ -958,7 +984,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
         renderAdminOrders();
       }
 
-      showToast('🎉 Pedido enviado com sucesso!', 'success');
+      showToast('🎉 Pedido registrado com sucesso!', 'success');
       closeOrderModal();
     }
 
@@ -980,8 +1006,8 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
         const itemText = Array.isArray(ord.items) ? ord.items.map(i => `${i.quantity}x ${i.name}`).join(', ') : 'Item';
 
         let statusBg = 'bg-yellow-600 text-yellow-100';
-        if (ord.status === 'entregue' || ord.status === 'Concluído') statusBg = 'bg-green-600 text-green-100';
-        if (ord.status === 'cancelado' || ord.status === 'Cancelado') statusBg = 'bg-red-600 text-red-100';
+        if (ord.status === 'Concluído' || ord.status === 'entregue') statusBg = 'bg-green-600 text-green-100';
+        if (ord.status === 'Cancelado' || ord.status === 'cancelado') statusBg = 'bg-red-600 text-red-100';
 
         tr.innerHTML = `
           <td class="p-3 text-xs font-mono text-stone-400">${new Date(ord.created_at).toLocaleString('pt-BR')}</td>
@@ -1051,7 +1077,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
 
       if (supabaseClient) {
         await supabaseClient.from('produtos').delete().eq('id', prodId);
-        showToast('Produto removido!', 'info');
+        showToast('Produto removido do Supabase!', 'info');
         fetchProductsFromSupabase();
       } else {
         products = products.filter(p => String(p.id) !== String(prodId));
@@ -1065,7 +1091,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
       document.getElementById('product-form').reset();
       document.getElementById('prod-id').value = '';
       document.getElementById('admin-form-title').innerText = '➕ Cadastrar Item no Supabase';
-      document.getElementById('btn-save-prod').innerText = '💾 Salvar no Supabase';
+      document.getElementById('btn-save-prod').innerText = '💾 Salvar Produto';
     }
 
     function renderAdminProducts() {
@@ -1112,8 +1138,8 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
         const itemText = Array.isArray(ord.items) ? ord.items.map(i => `${i.quantity}x ${i.name}`).join(', ') : 'Item';
 
         let statusBg = 'bg-yellow-600 text-yellow-100';
-        if (ord.status === 'entregue' || ord.status === 'Concluído') statusBg = 'bg-green-600 text-green-100';
-        if (ord.status === 'cancelado' || ord.status === 'Cancelado') statusBg = 'bg-red-600 text-red-100';
+        if (ord.status === 'Concluído' || ord.status === 'entregue') statusBg = 'bg-green-600 text-green-100';
+        if (ord.status === 'Cancelado' || ord.status === 'cancelado') statusBg = 'bg-red-600 text-red-100';
 
         tr.innerHTML = `
           <td class="p-3 text-xs font-mono text-stone-400">${new Date(ord.created_at).toLocaleString('pt-BR')}</td>
@@ -1123,8 +1149,8 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
           <td class="p-3"><span class="font-pixel text-xs px-2 py-1 rounded inline-block ${statusBg}">${ord.status}</span></td>
           <td class="p-3 text-center">
             <div class="flex gap-1 justify-center">
-              <button id="btn-done-${ord.id}" onclick="updateOrderStatus('${ord.id}', 'entregue')" class="mc-button mc-button-green text-xs px-2 py-1">🟢 Entregue</button>
-              <button id="btn-cancel-${ord.id}" onclick="updateOrderStatus('${ord.id}', 'cancelado')" class="mc-button mc-button-red text-xs px-2 py-1">🔴 Cancelar</button>
+              <button id="btn-done-${ord.id}" onclick="updateOrderStatus('${ord.id}', 'Concluído')" class="mc-button mc-button-green text-xs px-2 py-1">🟢 Concluído</button>
+              <button id="btn-cancel-${ord.id}" onclick="updateOrderStatus('${ord.id}', 'Cancelado')" class="mc-button mc-button-red text-xs px-2 py-1">🔴 Cancelado</button>
             </div>
           </td>
         `;
@@ -1133,12 +1159,6 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
     }
 
     async function updateOrderStatus(orderId, newStatus) {
-      const btnDone = document.getElementById(`btn-done-${orderId}`);
-      const btnCancel = document.getElementById(`btn-cancel-${orderId}`);
-
-      if (btnDone) btnDone.disabled = true;
-      if (btnCancel) btnCancel.disabled = true;
-
       if (supabaseClient) {
         const { error } = await supabaseClient
           .from('pedidos')
@@ -1149,7 +1169,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
           showToast('Erro ao atualizar status do pedido.', 'error');
           console.error(error);
         } else {
-          showToast(`Pedido atualizado para "${newStatus}"`, 'info');
+          showToast(`Pedido marcado como "${newStatus}"!`, 'info');
           fetchOrdersFromSupabase();
         }
       } else {
@@ -1161,9 +1181,6 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
           renderAdminOrders();
         }
       }
-
-      if (btnDone) btnDone.disabled = false;
-      if (btnCancel) btnCancel.disabled = false;
     }
 
     function showToast(msg, type = 'info') {
