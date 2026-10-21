@@ -163,6 +163,12 @@
       }
     </style>
 
+
+    <style id="hide-supabase-ui">
+      #sb-status-title, #sb-status-desc { display: none !important; }
+      button[onclick*="openConfigModal"] { display: none !important; }
+    </style>
+
 </head>
 <body class="min-h-screen flex flex-col justify-between antialiased">
 
@@ -612,9 +618,9 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
       const bannerDesc = document.getElementById('sb-status-desc');
 
       if (!window.supabase) {
-        bannerTitle.innerText = '⚡ Supabase: Biblioteca indisponível';
-        bannerTitle.className = 'font-pixel text-red-300 text-base mb-1';
-        bannerDesc.innerText = 'Não foi possível carregar o cliente Supabase. Atualize a página.';
+        if (bannerTitle) bannerTitle.innerText = '⚡ Supabase: Biblioteca indisponível';
+        if (bannerTitle) bannerTitle.className = 'font-pixel text-red-300 text-base mb-1';
+        if (bannerDesc) bannerDesc.innerText = 'Não foi possível carregar o cliente Supabase. Atualize a página.';
         useFallbackDemoData();
         return;
       }
@@ -624,18 +630,18 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
           SUPABASE_URL,
           SUPABASE_PUBLISHABLE_KEY
         );
-        bannerTitle.innerText = '⚡ Supabase: Conectando...';
-        bannerTitle.className = 'font-pixel text-green-300 text-base mb-1';
-        bannerDesc.innerText = 'Conectando automaticamente ao banco de dados na nuvem.';
+        if (bannerTitle) bannerTitle.innerText = '⚡ Supabase: Conectando...';
+        if (bannerTitle) bannerTitle.className = 'font-pixel text-green-300 text-base mb-1';
+        if (bannerDesc) bannerDesc.innerText = 'Conectando automaticamente ao banco de dados na nuvem.';
 
         fetchProductsFromSupabase();
         fetchOrdersFromSupabase();
         subscribeRealtime();
       } catch (err) {
         console.error('Erro ao conectar com Supabase:', err);
-        bannerTitle.innerText = '⚡ Supabase: Erro de conexão';
-        bannerTitle.className = 'font-pixel text-red-300 text-base mb-1';
-        bannerDesc.innerText = 'Confira a URL, a chave e as permissões das tabelas no Supabase.';
+        if (bannerTitle) bannerTitle.innerText = '⚡ Supabase: Erro de conexão';
+        if (bannerTitle) bannerTitle.className = 'font-pixel text-red-300 text-base mb-1';
+        if (bannerDesc) bannerDesc.innerText = 'Confira a URL, a chave e as permissões das tabelas no Supabase.';
         useFallbackDemoData();
       }
     }
