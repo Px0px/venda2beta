@@ -176,8 +176,8 @@
           ⛏️
         </div>
         <div>
-          <h1 class="font-pixel text-yellow-400 text-sm md:text-lg tracking-wider drop-shadow">MINE 2BETA</h1>
-          <p class="text-xs text-stone-400">Lojinha de Trocas Minecraft</p>
+          <h1 class="font-pixel text-yellow-400 text-sm md:text-lg tracking-wider drop-shadow">CRAFT-SHOP</h1>
+          <p class="text-xs text-stone-400">Lojinha de Trocas Minecraft com Supabase</p>
         </div>
       </div>
 
@@ -680,8 +680,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
       
       const { data, error } = await supabaseClient
         .from('produtos')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) {
         showToast('Erro ao buscar produtos do Supabase.', 'error');
@@ -699,8 +698,7 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
 
       const { data, error } = await supabaseClient
         .from('pedidos')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) {
         showToast('Erro ao buscar pedidos do Supabase.', 'error');
@@ -868,7 +866,9 @@ CREATE POLICY "Acesso Total Pedidos" ON public.pedidos FOR ALL USING (true) WITH
       grid.innerHTML = '';
 
       const filtered = products.filter(p => {
-        const matchSearch = p.name.toLowerCase().includes(search) || p.price_description.toLowerCase().includes(search);
+        const name = String(p.name || '');
+        const price = String(p.price_description || '');
+        const matchSearch = name.toLowerCase().includes(search) || price.toLowerCase().includes(search);
         const matchCat = cat === 'ALL' || p.category === cat;
         return matchSearch && matchCat;
       });
