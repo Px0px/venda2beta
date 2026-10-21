@@ -11,8 +11,12 @@
     <!-- Supabase JS Client v2 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .font-minecraft-title { font-family: 'Press Start 2P', cursive; }
-        .font-minecraft { font-family: 'VT323', monospace; }
+        .font-minecraft-title {
+            font-family: 'Press Start 2P', cursive;
+        }
+        .font-minecraft {
+            font-family: 'VT323', monospace;
+        }
         
         .mc-button {
             box-shadow: inset -4px -4px 0px 0px #2a2a2a, inset 4px 4px 0px 0px #ffffff;
@@ -50,7 +54,10 @@
             border: 2px solid #a0a0a0;
             box-shadow: inset 2px 2px 0px 0px #555;
         }
-        .mc-input:focus { border-color: #55ff55; outline: none; }
+        .mc-input:focus {
+            border-color: #55ff55;
+            outline: none;
+        }
 
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-track { background: #111; }
@@ -118,11 +125,13 @@
                 </div>
 
                 <div class="flex items-center gap-4">
+                    <!-- Status do Banco de Dados -->
                     <div id="db-status-badge" class="px-3 py-1 bg-green-900/80 border border-green-500 text-green-200 text-xs rounded flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-green-400"></span>
                         <span>Supabase Conectado</span>
                     </div>
 
+                    <!-- User Profile Info -->
                     <div id="user-info-bar" class="flex items-center gap-3 bg-stone-900 p-2 px-3 border-2 border-stone-600">
                         <span id="user-badge" class="font-minecraft-title text-xs text-green-400">---</span>
                         <button onclick="logout()" class="mc-button mc-button-red text-xs px-2 py-1 text-white font-bold">
@@ -203,14 +212,14 @@
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-bold mb-1">Nome do Item:</label>
+                                <label class="block text-sm font-bold mb-1">Nome do Item a Vender:</label>
                                 <input type="text" id="prod-nome" required placeholder="Ex: Armadura de Diamante" class="w-full p-2 mc-input text-lg">
                             </div>
                             <div>
                                 <label class="block text-sm font-bold mb-1">Categoria:</label>
                                 <select id="prod-categoria" class="w-full p-2 mc-input text-lg bg-black text-white">
-                                    <option value="Equipamentos">Equipamentos</option>
                                     <option value="Recursos">Recursos</option>
+                                    <option value="Equipamentos">Equipamentos</option>
                                     <option value="Blocos">Blocos</option>
                                     <option value="Comida/Poções">Comida/Poções</option>
                                 </select>
@@ -219,18 +228,18 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-bold mb-1">Ícone / Emoji / URL:</label>
-                                <input type="text" id="prod-imagem" required placeholder="Ex: 📦 ou 💎" class="w-full p-2 mc-input text-lg">
+                                <label class="block text-sm font-bold mb-1">Ícone / Emoji / URL Imagem:</label>
+                                <input type="text" id="prod-imagem" required placeholder="Ex: 📦 ou URL" class="w-full p-2 mc-input text-lg">
                             </div>
                             <div>
                                 <label class="block text-sm font-bold mb-1">Descrição do Preço (Troca):</label>
-                                <input type="text" id="prod-preco-desc" required placeholder="Ex: 2 packs e meio de carne de vaca" class="w-full p-2 mc-input text-lg">
+                                <input type="text" id="prod-preco-desc" required placeholder="Ex: 2 packs e meio de carne" class="w-full p-2 mc-input text-lg">
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold mb-1">Estoque Inicial:</label>
-                            <input type="number" id="prod-estoque" required min="0" placeholder="Ex: 1" class="w-full p-2 mc-input text-lg">
+                            <input type="number" id="prod-estoque" required min="0" placeholder="Ex: 64" class="w-full p-2 mc-input text-lg">
                         </div>
 
                         <div class="flex gap-4 pt-2">
@@ -271,8 +280,9 @@
     </div>
 
     <script>
+        // CONFIGURAÇÃO DIRETA DO SUPABASE NO CÓDIGO
         const SUPABASE_URL = "https://jjthqwziyblaknxzlxyq.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_-1d4BJMLldRrPXLEXZdCng_iI8bPLit"; // Coloque sua chave publishable completa aqui
+        const SUPABASE_KEY = "sb_publishable_-1d4BJMLldRrPXLEXZdCng_iI8bPLit"; // Substitua aqui pela sua chave publishable completa se necessário
 
         let supabaseClient = null;
         try {
@@ -281,6 +291,7 @@
             console.error("Erro ao conectar no Supabase:", e);
         }
 
+        // STATE DA APLICAÇÃO
         let currentUser = JSON.parse(localStorage.getItem('mc_user')) || null;
         let products = [];
         let orders = [];
@@ -293,6 +304,7 @@
             }
         };
 
+        // LOGIN / LOGOUT LOGIC
         function switchLoginTab(tab) {
             const guestBtn = document.getElementById('tab-guest-btn');
             const adminBtn = document.getElementById('tab-admin-btn');
@@ -352,10 +364,12 @@
             loadData();
         }
 
+        // CARREGAR DADOS DO SUPABASE
         async function loadData() {
             if (!supabaseClient) return;
 
             try {
+                // Fetch produtos
                 const { data: prodData, error: prodErr } = await supabaseClient
                     .from('produtos')
                     .select('*')
@@ -363,6 +377,7 @@
                 
                 if (!prodErr && prodData) products = prodData;
 
+                // Fetch pedidos
                 const { data: ordData, error: ordErr } = await supabaseClient
                     .from('pedidos')
                     .select('*')
@@ -370,6 +385,7 @@
                 
                 if (!ordErr && ordData) orders = ordData;
 
+                // Realtime Subscriptions
                 supabaseClient.channel('realtime_shop')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, () => loadData())
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => loadData())
@@ -384,6 +400,7 @@
             renderOrders();
         }
 
+        // RENDER CATÁLOGO
         function renderCatalog() {
             const grid = document.getElementById('catalog-grid');
             const search = document.getElementById('search-input').value.toLowerCase();
@@ -445,4 +462,196 @@
             });
         }
 
-        async function
+        // SALVAR PRODUTO (ADMIN)
+        async function handleSaveProduct(e) {
+            e.preventDefault();
+            const btn = document.getElementById('save-prod-btn');
+            btn.disabled = true;
+            btn.innerText = "SALVANDO...";
+
+            const id = document.getElementById('prod-id').value;
+            const name = document.getElementById('prod-nome').value.trim();
+            const category = document.getElementById('prod-categoria').value;
+            const icon = document.getElementById('prod-imagem').value.trim();
+            const price_description = document.getElementById('prod-preco-desc').value.trim();
+            const stock = parseInt(document.getElementById('prod-estoque').value);
+
+            const payload = { name, category, icon, price_description, stock };
+
+            if (id) {
+                await supabaseClient.from('produtos').update(payload).eq('id', id);
+            } else {
+                await supabaseClient.from('produtos').insert([payload]);
+            }
+
+            resetProductForm();
+            switchMainTab('catalog');
+            await loadData();
+
+            btn.disabled = false;
+            btn.innerText = "SALVAR PRODUTO NO SUPABASE";
+            alert("Produto salvo com sucesso!");
+        }
+
+        function editProduct(id) {
+            const p = products.find(x => String(x.id) === String(id));
+            if (!p) return;
+            document.getElementById('prod-id').value = p.id;
+            document.getElementById('prod-nome').value = p.name;
+            document.getElementById('prod-categoria').value = p.category;
+            document.getElementById('prod-imagem').value = p.icon;
+            document.getElementById('prod-preco-desc').value = p.price_description;
+            document.getElementById('prod-estoque').value = p.stock;
+            switchMainTab('admin');
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+            await supabaseClient.from('produtos').delete().eq('id', id);
+            await loadData();
+        }
+
+        function resetProductForm() {
+            document.getElementById('prod-id').value = '';
+            document.getElementById('product-form').reset();
+        }
+
+        // FAZER PEDIDO (CONVIDADO)
+        let selectedProductForOrder = null;
+
+        function openOrderModal(prodId) {
+            selectedProductForOrder = products.find(p => String(p.id) === String(prodId));
+            if (!selectedProductForOrder) return;
+
+            document.getElementById('order-prod-id').value = selectedProductForOrder.id;
+            document.getElementById('order-qtd').value = 1;
+            document.getElementById('order-qtd').max = selectedProductForOrder.stock;
+
+            document.getElementById('order-modal-details').innerHTML = `
+                <p><strong>Item:</strong> ${selectedProductForOrder.name}</p>
+                <p><strong>Preço:</strong> ${selectedProductForOrder.price_description}</p>
+                <p><strong>Estoque disponível:</strong> ${selectedProductForOrder.stock}</p>
+            `;
+
+            document.getElementById('order-modal').classList.remove('hidden');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').classList.add('hidden');
+        }
+
+        async function submitOrder(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-order-btn');
+            btn.disabled = true;
+            btn.innerText = "ENVIANDO PEDIDO...";
+
+            const qtd = parseInt(document.getElementById('order-qtd').value);
+            if (qtd > selectedProductForOrder.stock) {
+                alert("Quantidade maior do que o estoque disponível!");
+                btn.disabled = false;
+                return;
+            }
+
+            // Insere pedido
+            await supabaseClient.from('pedidos').insert([{
+                cliente: currentUser.name,
+                produto_id: selectedProductForOrder.id,
+                produto_nome: selectedProductForOrder.name,
+                quantidade: qtd,
+                total_pagamento: selectedProductForOrder.price_description,
+                status: 'Pendente'
+            }]);
+
+            // Atualiza estoque no Supabase
+            const novoEstoque = selectedProductForOrder.stock - qtd;
+            await supabaseClient.from('produtos').update({ stock: novoEstoque }).eq('id', selectedProductForOrder.id);
+
+            closeOrderModal();
+            switchMainTab('orders');
+            await loadData();
+
+            btn.disabled = false;
+            btn.innerText = "CONFIRMAR PEDIDO DE TROCA";
+            alert("Pedido enviado com sucesso!");
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('orders-table-body');
+            const thActions = document.getElementById('th-actions');
+            tbody.innerHTML = '';
+
+            const isAdmin = currentUser && currentUser.role === 'admin';
+            if (!isAdmin) {
+                thActions.classList.add('hidden');
+            } else {
+                thActions.classList.remove('hidden');
+            }
+
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">Nenhum pedido realizado ainda.</td></tr>`;
+                return;
+            }
+
+            orders.forEach(o => {
+                let statusColor = 'text-yellow-400';
+                if (o.status === 'Concluído') statusColor = 'text-green-400';
+                if (o.status === 'Cancelado') statusColor = 'text-red-400';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 text-gray-400">#${String(o.id).substring(0, 8)}</td>
+                        <td class="p-3 font-bold text-white">${o.cliente}</td>
+                        <td class="p-3 text-yellow-300">${o.produto_nome}</td>
+                        <td class="p-3">${o.quantidade}</td>
+                        <td class="p-3 text-green-300">${o.total_pagamento}</td>
+                        <td class="p-3 font-bold ${statusColor}">${o.status}</td>
+                        ${isAdmin ? `
+                            <td class="p-3 text-right space-x-1">
+                                <button onclick="updateOrderStatus('\${o.id}', 'Concluído')" class="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 rounded font-bold">✔</button>
+                                <button onclick="updateOrderStatus('\${o.id}', 'Cancelado')" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded font-bold">✖</button>
+                            </td>
+                        ` : ''}
+                    </tr>
+                `;
+            });
+        }
+
+        async function updateOrderStatus(orderId, status) {
+            await supabaseClient.from('pedidos').update({ status }).eq('id', orderId);
+            await loadData();
+        }
+
+        // SWITCH TABS
+        function switchMainTab(tab) {
+            const secCat = document.getElementById('section-catalog');
+            const secOrd = document.getElementById('section-orders');
+            const secAdm = document.getElementById('section-admin');
+
+            const btnCat = document.getElementById('nav-catalog');
+            const btnOrd = document.getElementById('nav-orders');
+            const btnAdm = document.getElementById('nav-admin');
+
+            secCat.classList.add('hidden');
+            secOrd.classList.add('hidden');
+            secAdm.classList.add('hidden');
+
+            btnCat.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black";
+            btnOrd.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black";
+            btnAdm.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-800 text-gray-400 border-t-4 border-l-4 border-r-4 border-black hidden";
+            if (currentUser.role === 'admin') btnAdm.classList.remove('hidden');
+
+            if (tab === 'catalog') {
+                secCat.classList.remove('hidden');
+                btnCat.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
+            } else if (tab === 'orders') {
+                secOrd.classList.remove('hidden');
+                btnOrd.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
+            } else if (tab === 'admin') {
+                secAdm.classList.remove('hidden');
+                btnAdm.className = "py-2 px-6 font-minecraft-title text-xs bg-stone-700 text-yellow-400 border-t-4 border-l-4 border-r-4 border-black";
+            }
+        }
+    </script>
+</body>
+</html>
